@@ -4,6 +4,7 @@ import Slider from "./ui/Slider.jsx";
 import ProsCons from "./ui/ProsCons.jsx";
 import { BRANDS, STATUSES, BRAND_COLORS } from "../styles/theme.js";
 import { iceTotal } from "../utils/iceCalc.js";
+import { exportToCalendar } from "../utils/icsExport.js";
 
 export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle, onTagClick }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -95,7 +96,7 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
           {idea.aiAnalysis?.nextActionSuggestion && (
             <div style={{
               background: "#00F0FF0d", border: "1px solid #00F0FF28",
-              borderRadius: 10, padding: "10px 14px", marginBottom: 16,
+              borderRadius: 10, padding: "10px 14px", marginBottom: 10,
             }}>
               <div style={{ fontSize: 10, color: "#00F0FF", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
                 🎯 Nästa steg
@@ -105,6 +106,20 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
               </p>
             </div>
           )}
+
+          {/* Lägg till i kalender */}
+          <button
+            onClick={e => { e.stopPropagation(); exportToCalendar(idea); }}
+            style={{
+              width: "100%", marginBottom: 16, padding: "11px",
+              background: "#ffffff06", border: "1px solid #1e1e3a",
+              borderRadius: 10, color: "#555", fontSize: 12,
+              cursor: "pointer", display: "flex", alignItems: "center",
+              justifyContent: "center", gap: 6,
+            }}
+          >
+            📅 Lägg till i Kalender
+          </button>
 
           {(idea.aiAnalysis?.pros?.length > 0 || idea.aiAnalysis?.cons?.length > 0) && (
             <ProsCons pros={idea.aiAnalysis.pros} cons={idea.aiAnalysis.cons} />
