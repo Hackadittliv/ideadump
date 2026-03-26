@@ -1,6 +1,6 @@
 -- IdeaDump — Supabase SQL Setup
 -- Kör detta i Supabase SQL Editor:
--- https://supabase.com/dashboard/project/yvfavybujwahukcxkfol/sql
+-- https://supabase.com/dashboard/project/wmvxantcujnsathpeqyu/sql
 
 -- 1. Skapa tabell
 CREATE TABLE IF NOT EXISTS ideadump_user_data (
