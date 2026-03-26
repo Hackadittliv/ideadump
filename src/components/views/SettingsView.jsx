@@ -1,6 +1,6 @@
 import { exportToCSV } from "../../utils/export.js";
 
-export default function SettingsView({ ideas, onClearIdeas, flash }) {
+export default function SettingsView({ ideas, onClearIdeas, flash, user, onSignOut }) {
   const stats = [
     { icon: "💡", val: ideas.length, label: "Idéer", color: "#00F0FF" },
     { icon: "📥", val: ideas.filter(i => i.status === "inbox").length, label: "Inbox", color: "#00F0FF" },
@@ -13,6 +13,24 @@ export default function SettingsView({ ideas, onClearIdeas, flash }) {
       <h2 style={{ fontSize: 16, fontWeight: 600, color: "#00F0FF", margin: "0 0 22px" }}>
         Inställningar
       </h2>
+
+      {/* Inloggad som */}
+      {user && (
+        <div style={{
+          background: "#070714", border: "1px solid #00F0FF18",
+          borderRadius: 12, padding: "12px 14px", marginBottom: 16,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div>
+            <p style={{ margin: 0, fontSize: 11, color: "#00F0FF", fontWeight: 600 }}>☁️ Inloggad</p>
+            <p style={{ margin: "2px 0 0", fontSize: 11, color: "#444" }}>{user.email}</p>
+          </div>
+          <button onClick={onSignOut} style={{
+            background: "none", border: "1px solid #1e0e0e", borderRadius: 8,
+            color: "#3a1a1a", fontSize: 11, padding: "6px 12px", cursor: "pointer",
+          }}>Logga ut</button>
+        </div>
+      )}
 
       {/* API-info */}
       <div style={{
@@ -59,7 +77,7 @@ export default function SettingsView({ ideas, onClearIdeas, flash }) {
         borderRadius: 12, padding: 14,
       }}>
         <p style={{ margin: 0, fontSize: 11, color: "#333", lineHeight: 1.7 }}>
-          🔒 API-nycklar och idéer sparas i localStorage i din webbläsare och stannar kvar permanent.
+          ☁️ Idéer synkas till Supabase-molnet när du är inloggad — tillgängliga på alla enheter.
         </p>
       </div>
 

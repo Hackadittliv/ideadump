@@ -3,10 +3,14 @@ import CaptureView from "./components/views/CaptureView.jsx";
 import ListView from "./components/views/ListView.jsx";
 import SettingsView from "./components/views/SettingsView.jsx";
 import PrivacyView from "./components/views/PrivacyView.jsx";
+import LoginView from "./components/views/LoginView.jsx";
+import { useAuth } from "./utils/useAuth.js";
+import { saveToCloud, loadFromCloud } from "./utils/cloudSync.js";
 import { loadIdeas, saveIdeas, loadApiKeys } from "./utils/storage.js";
 import { analyzeIdea } from "./utils/claudeApi.js";
 
 export default function IdeaDump() {
+  const { user, loading: authLoading, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut } = useAuth();
   const [view, setView]               = useState("capture");
   const [ideas, setIdeas]             = useState([]);
   const [transcript, setTranscript]   = useState("");
@@ -26,24 +30,44 @@ export default function IdeaDump() {
   const mediaRef  = useRef(null);
   const chunksRef = useRef([]);
 
-  // ── Ladda från localStorage ──
+  // ── Ladda API-nycklar ──
   useEffect(() => {
-    setIdeas(loadIdeas());
     const keys = loadApiKeys();
     setAnthropicKey(keys.anthropic);
     setOpenaiKey(keys.openai);
 
-    // Starta inspelning automatiskt om appen öppnades via Siri-genväg
     const params = new URLSearchParams(window.location.search);
     if (params.get("autorecord") === "true") {
       setTimeout(() => startBrowserSpeech(), 900);
     }
   }, []);
 
+  // ── Ladda idéer: cloud om inloggad, annars localStorage ──
+  useEffect(() => {
+    if (authLoading) return;
+    if (user) {
+      loadFromCloud(user.id)
+        .then(cloudIdeas => {
+          if (cloudIdeas && cloudIdeas.length > 0) {
+            setIdeas(cloudIdeas);
+          } else {
+            // Migrera localStorage-idéer till cloud vid första inloggning
+            const local = loadIdeas();
+            setIdeas(local);
+            if (local.length > 0) saveToCloud(user.id, local).catch(() => {});
+          }
+        })
+        .catch(() => setIdeas(loadIdeas()));
+    } else {
+      setIdeas(loadIdeas());
+    }
+  }, [user, authLoading]);
+
   const persistIdeas = useCallback((arr) => {
     setIdeas(arr);
-    saveIdeas(arr);
-  }, []);
+    saveIdeas(arr); // alltid spara lokalt
+    if (user) saveToCloud(user.id, arr).catch(() => {}); // synka till cloud om inloggad
+  }, [user]);
 
   const flash = useCallback((msg, ms = 3000) => {
     setStatusMsg(msg);
@@ -177,6 +201,23 @@ export default function IdeaDump() {
 
   const inboxCount = ideas.filter(i => i.status === "inbox").length;
 
+  // Auth-laddning
+  if (authLoading) return (
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+      background: "#02020e", color: "#333", fontSize: 13, letterSpacing: 2,
+    }}>LADDAR...</div>
+  );
+
+  // Visa login om ej inloggad
+  if (!user) return (
+    <LoginView
+      onSignInGoogle={signInWithGoogle}
+      onSignInEmail={signInWithEmail}
+      onSignUpEmail={signUpWithEmail}
+    />
+  );
+
   if (showPrivacy) return <PrivacyView onClose={() => setShowPrivacy(false)} />;
 
   return (
@@ -304,6 +345,8 @@ export default function IdeaDump() {
           ideas={ideas}
           onClearIdeas={() => persistIdeas([])}
           flash={flash}
+          user={user}
+          onSignOut={signOut}
         />
       )}
 
