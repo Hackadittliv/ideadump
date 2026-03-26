@@ -1,0 +1,64 @@
+# IdeaDump
+
+> Röstdriven idéfångst-app med AI-analys. Spela in en idé med rösten — Claude analyserar direkt med ICE-scoring, pros/cons, coachingkommentar och konkret nästa steg.
+
+## Om projektet
+
+IdeaDump är ett personligt produktivitetsverktyg byggt för Christian Wederbrand och entreprenörer som vill fånga idéer snabbt utan att tappa fart. Istället för att skriva ner idéer för hand spelar du in dem med rösten. Direkt efteråt analyserar Claude AI idén utifrån ditt specifika sammanhang: varumärken, mission och nuläge.
+
+Appen fungerar helt offline (localStorage), kräver ingen inloggning och kan installeras som app på iPhone via PWA.
+
+## Huvudfunktioner
+
+- **Röstinspelning** — Browser Speech API (gratis, direkt i webbläsaren) eller OpenAI Whisper (bättre noggrannhet)
+- **AI-analys med Claude** — ICE-scoring, pros & cons, coachingkommentar, den största risken, nästa steg inom 48h
+- **ICE-scoring** — Impact, Confidence, Ease (1–10) med visuella score-ringar
+- **Idéhantering** — status Inbox / Next Action / Inkubera / Parkera / Klar
+- **Varumärkesfiltrering** — HDL, Conversify, Life Is Awesome, Timeless Brick, Övrigt
+- **CSV-export** — exportera alla idéer med full metadata
+- **PWA + Siri-genväg** — "Hej Siri, dumpa en idé" startar appen med mikrofonen igång
+
+## Priser / Åtkomst
+
+IdeaDump är ett personligt verktyg. Gratis att använda.
+Kräver egna API-nycklar: Anthropic (Claude-analys) och valfritt OpenAI (Whisper-transkription).
+
+## Om organisationen
+
+- **Grundare:** Christian Wederbrand
+- **Plats:** Göteborg, Sverige
+- **Varumärken:** HDL (Hacka Ditt Liv), Conversify, Life Is Awesome, Timeless Brick
+- **Webbplats:** https://ideadump.netlify.app
+- **Hackadittliv:** https://hackadittliv.se
+- **Byggt av:** Conversify.io (https://conversify.io)
+
+## Teknisk stack
+
+- React 18 + Vite (PWA)
+- Anthropic Claude API (AI-analys)
+- OpenAI Whisper API (rösttranskription)
+- localStorage (all data stannar på enheten)
+- Netlify (hosting)
+
+## Vanliga frågor
+
+**Vad är IdeaDump?**
+IdeaDump är en röstdriven idéfångst-app med AI-analys. Du spelar in en idé med rösten, och Claude analyserar den direkt med ICE-scoring, pros/cons, coachingkommentar och ett konkret nästa steg inom 48 timmar.
+
+**Hur fungerar röstinspelningen?**
+Appen stöder två röstlägen: Browser Speech API (gratis, fungerar direkt i Chrome/Safari) och OpenAI Whisper (högre noggrannhet, kräver OpenAI API-nyckel). Du kan också skriva direkt i textfältet.
+
+**Vad analyserar Claude i min idé?**
+Claude ger: en sammanfattning av idén, ICE-scoring (Impact, Confidence, Ease 1–10), pros och cons, den största risken, en coachingkommentar kopplad till ditt specifika sammanhang, och ett konkret nästa steg inom 48 timmar.
+
+**Var sparas mina idéer?**
+Alla idéer sparas lokalt i din webbläsares localStorage. Inget skickas till någon server — varken idéer eller API-nycklar lagras utanför din enhet.
+
+**Vad är ICE-scoring?**
+ICE är ett prioriteringsramverk: Impact (hur stor effekt), Confidence (hur säker du är) och Ease (hur lätt att genomföra). Varje dimension bedöms 1–10 och snittet ger ICE-totalen. Idéer sorteras på ICE i idélistan.
+
+**Fungerar IdeaDump som app på iPhone?**
+Ja! Öppna i Safari, tryck dela och välj "Lägg till på hemskärmen". Du kan också ställa in en Siri-genväg med URL ?autorecord=true som startar appen med mikrofonen igång direkt.
+
+**Vad är energivarningen (Genuine / Distraction)?**
+Claude bedömer om idén verkar komma från genuin motivation eller är en distraction — något som känns spännande men egentligen tar dig från dina verkliga prioriteringar. En ärlig signal att ta på allvar.

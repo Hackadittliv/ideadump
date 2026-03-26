@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ── Primary SEO ── -->
+  <title>IdeaDump — Röstdriven idéfångst med AI-analys | HDL</title>
+  <meta name="description" content="Fånga idéer med rösten, få direkt AI-analys av Claude: ICE-scoring, pros/cons, coaching och nästa steg. Byggt av Hackadittliv för smarta entreprenörer." />
+  <meta name="keywords" content="idéhantering, röstinspelning, AI-analys, ICE-scoring, produktivitet, entreprenör, HDL, Hackadittliv" />
+  <meta name="author" content="Hackadittliv / Conversify.io" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <link rel="canonical" href="https://ideadump.netlify.app/" />
+
+  <!-- ── Open Graph ── -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://ideadump.netlify.app/" />
+  <meta property="og:site_name" content="IdeaDump" />
+  <meta property="og:title" content="IdeaDump — Röstdriven idéfångst med AI-analys" />
+  <meta property="og:description" content="Dumpa en idé med rösten. Claude analyserar direkt: ICE-scoring, pros/cons, coaching och nästa steg inom 48h." />
+  <meta property="og:image" content="https://ideadump.netlify.app/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="IdeaDump — Röstdriven idéfångst med AI-analys" />
+  <meta property="og:locale" content="sv_SE" />
+
+  <!-- ── Twitter / X ── -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="IdeaDump — Röstdriven idéfångst med AI-analys" />
+  <meta name="twitter:description" content="Dumpa en idé med rösten. Claude analyserar direkt: ICE-scoring, pros/cons, coaching och nästa steg." />
+  <meta name="twitter:image" content="https://ideadump.netlify.app/og-image.png" />
+
+  <!-- ── PWA ── -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#00F0FF" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="IdeaDump" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+
+  <!-- ── Favicon ── -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💡</text></svg>" />
+
+  <!-- ── Google Search Console verifiering ── -->
+  <!-- <meta name="google-site-verification" content="KOD-FRÅN-GOOGLE" /> -->
+
+  <!-- ── Bing verifiering ── -->
+  <!-- <meta name="msvalidate.01" content="KOD-FRÅN-BING" /> -->
+
+  <!-- ── Fonts ── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- ── JSON-LD Structured Data ── -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://ideadump.netlify.app/#website",
+        "name": "IdeaDump",
+        "url": "https://ideadump.netlify.app",
+        "inLanguage": "sv-SE"
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://ideadump.netlify.app/#app",
+        "name": "IdeaDump",
+        "url": "https://ideadump.netlify.app",
+        "description": "Röstdriven idéfångst med AI-analys via Claude. Spela in en idé med rösten, få direkt ICE-scoring, pros/cons, coachingkommentar och förslag på nästa steg.",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "Web, iOS, Android",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "SEK"
+        },
+        "featureList": [
+          "Röstinspelning med Browser Speech API eller OpenAI Whisper",
+          "AI-analys med Claude — ICE-scoring, pros/cons, coaching",
+          "Idéhantering med status: Inbox, Next Action, Inkubera, Parkera, Klar",
+          "Filtrering per varumärke (HDL, Conversify, Life Is Awesome, Timeless Brick)",
+          "CSV-export av alla idéer",
+          "PWA — fungerar som installerad app på iPhone",
+          "Siri-genväg: Hej Siri, dumpa en idé"
+        ],
+        "inLanguage": "sv-SE",
+        "author": {
+          "@type": "Organization",
+          "@id": "https://ideadump.netlify.app/#organization"
+        }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://ideadump.netlify.app/#organization",
+        "name": "Hackadittliv",
+        "url": "https://hackadittliv.se",
+        "logo": "https://ideadump.netlify.app/og-image.png",
+        "description": "IdeaDump är ett verktyg från Hackadittliv för smarta entreprenörer som vill fånga och agera på sina idéer. Byggt av Conversify.io.",
+        "parentOrganization": {
+          "@type": "Organization",
+          "name": "Conversify.io",
+          "url": "https://conversify.io"
+        },
+        "founder": {
+          "@type": "Person",
+          "name": "Christian Wederbrand",
+          "jobTitle": "Grundare",
+          "worksFor": {
+            "@type": "Organization",
+            "name": "Hackadittliv"
+          }
+        },
+        "sameAs": [
+          "https://hackadittliv.se",
+          "https://conversify.io"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://ideadump.netlify.app/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Vad är IdeaDump?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "IdeaDump är en röstdriven idéfångst-app med AI-analys. Du spelar in en idé med rösten, och Claude analyserar den direkt med ICE-scoring, pros/cons, coachingkommentar och ett konkret nästa steg."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Hur fungerar röstinspelningen?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Appen stöder två röstlägen: Browser Speech API (gratis, fungerar direkt i Chrome/Safari) och OpenAI Whisper (bättre noggrannhet, kräver OpenAI API-nyckel). Du kan också skriva direkt i textfältet."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Vad analyserar Claude i min idé?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Claude ger en sammanfattning av idén, ICE-scoring (Impact, Confidence, Ease på skala 1–10), pros och cons, den största risken, ett coachingkommentar kopplat till ditt specifika sammanhang, och ett konkret nästa steg inom 48 timmar."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Var sparas mina idéer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Alla idéer sparas lokalt i din webbläsares localStorage. Inget skickas till någon server — varken dina idéer eller API-nycklar lagras utanför din enhet."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Vad är ICE-scoring?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "ICE är ett prioriteringsramverk med tre dimensioner: Impact (hur stor effekt idén kan ge), Confidence (hur säker du är på att det fungerar) och Ease (hur lätt det är att genomföra). Varje dimension bedöms 1–10 och snittet ger ICE-totalen."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Fungerar IdeaDump som app på iPhone?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja! IdeaDump är en PWA (Progressive Web App). Öppna den i Safari, tryck på dela-knappen och välj 'Lägg till på hemskärmen'. Du kan också ställa in en Siri-genväg som säger 'Hej Siri, dumpa en idé' och startar appen med mikrofonen igång direkt."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #02020e; color: #e0e0e0; }
+  </style>
+</head>
+<body>
+  <!-- Fallback för AI-botar och sökmotorer som inte kör JavaScript -->
+  <noscript>
+    <main style="max-width:600px;margin:40px auto;padding:20px;font-family:sans-serif;color:#111;">
+      <h1>IdeaDump — Röstdriven idéfångst med AI-analys</h1>
+      <p>Fånga idéer med rösten och få direkt analys av Claude AI: ICE-scoring, pros/cons, coaching och nästa steg. Byggt av Hackadittliv för smarta entreprenörer.</p>
+      <h2>Vad kan du göra?</h2>
+      <ul>
+        <li>Spela in idéer med rösten (Browser Speech eller Whisper)</li>
+        <li>Få ICE-scoring: Impact, Confidence, Ease (1–10)</li>
+        <li>Se pros, cons och den största risken med din idé</li>
+        <li>Få ett konkret nästa steg inom 48 timmar</li>
+        <li>Organisera idéer per varumärke och status</li>
+        <li>Exportera alla idéer till CSV</li>
+        <li>Installera som app på iPhone via PWA</li>
+      </ul>
+      <p>Aktivera JavaScript för att använda IdeaDump.</p>
+      <p>En produkt från <a href="https://hackadittliv.se">Hackadittliv</a> · Byggt av <a href="https://conversify.io">Conversify.io</a></p>
+    </main>
+  </noscript>
+
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

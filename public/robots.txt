@@ -1,0 +1,29 @@
+User-agent: *
+Allow: /
+
+# AI crawlers — explicit tillåtna för AIO/GEO-indexering
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+Sitemap: https://ideadump.netlify.app/sitemap.xml
