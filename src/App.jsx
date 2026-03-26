@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import CaptureView from "./components/views/CaptureView.jsx";
 import ListView from "./components/views/ListView.jsx";
 import SettingsView from "./components/views/SettingsView.jsx";
+import PrivacyView from "./components/views/PrivacyView.jsx";
 import { loadIdeas, saveIdeas, loadApiKeys } from "./utils/storage.js";
 import { analyzeIdea } from "./utils/claudeApi.js";
 
@@ -18,6 +19,8 @@ export default function IdeaDump() {
   const [openaiKey, setOpenaiKey]       = useState("");
   const [voiceMode, setVoiceMode]     = useState("browser");
   const [statusMsg, setStatusMsg]     = useState("");
+
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   const recRef    = useRef(null);
   const mediaRef  = useRef(null);
@@ -174,6 +177,8 @@ export default function IdeaDump() {
 
   const inboxCount = ideas.filter(i => i.status === "inbox").length;
 
+  if (showPrivacy) return <PrivacyView onClose={() => setShowPrivacy(false)} />;
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -316,6 +321,11 @@ export default function IdeaDump() {
         <span>Byggt av</span>
         <a href="https://conversify.io" target="_blank" rel="noopener noreferrer"
           style={{ color: "#13c8ec", textDecoration: "none" }}>Conversify.io</a>
+        <span>·</span>
+        <button onClick={() => setShowPrivacy(true)} style={{
+          background: "none", border: "none", padding: 0,
+          color: "#333", fontSize: 10, letterSpacing: 1, cursor: "pointer",
+        }}>Integritetspolicy</button>
       </div>
     </div>
   );
