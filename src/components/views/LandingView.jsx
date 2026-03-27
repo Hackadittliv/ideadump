@@ -5,7 +5,7 @@ const STEPS = [
   {
     num: "01",
     title: "Säg det till Siri",
-    desc: "\"Hej Siri, dumpa en idé\" — appen öppnas och mikrofonen startar direkt. Inga knappar, ingen friktion.",
+    desc: "\"Hej Siri, dumpa en idé\". Appen öppnas och mikrofonen startar direkt. Inga knappar, ingen friktion.",
   },
   {
     num: "02",
@@ -15,7 +15,7 @@ const STEPS = [
   {
     num: "03",
     title: "Du vet vad du ska göra",
-    desc: "Söndagsgenomgången pekar ut veckans tre bästa idéer — du bokar in dem i kalendern med ett tryck.",
+    desc: "Söndagsgenomgången pekar ut veckans tre bästa idéer. Du bokar in dem i kalendern med ett tryck.",
   },
 ];
 
@@ -23,12 +23,12 @@ const FEATURES = [
   {
     icon: "🎯",
     title: "Aldrig mer 'bra idé, men...'",
-    desc: "Claude flaggar direkt om din idé är en distraction eller en riktig möjlighet — baserat på dina faktiska mål.",
+    desc: "Claude flaggar direkt om din idé är en distraction eller en riktig möjlighet, baserat på dina faktiska mål.",
   },
   {
     icon: "💰",
     title: "Fokus på kassaflöde",
-    desc: "Varje analys kopplas till vad som faktiskt ger intäkt den här veckan — inte vad som känns kul att jobba med.",
+    desc: "Varje analys kopplas till vad som faktiskt ger intäkt den här veckan, inte vad som känns kul att jobba med.",
   },
   {
     icon: "📅",
@@ -151,7 +151,7 @@ export default function LandingView({ onShowLogin }) {
           </h1>
 
           <p style={{ fontSize: 17, color: "#555", lineHeight: 1.75, margin: "0 0 28px" }}>
-            IdeaDump fångar idéer med rösten på 30 sekunder, låter Claude analysera dem direkt och visar dig varje vecka exakt vad du ska agera på — kopplat till dina faktiska mål.
+            IdeaDump fångar idéer med rösten på 30 sekunder, låter Claude analysera dem direkt och visar dig varje vecka exakt vad du ska agera på, kopplat till dina faktiska mål.
           </p>
 
           {/* Inline mini-CTA i hero */}
@@ -222,7 +222,7 @@ export default function LandingView({ onShowLogin }) {
           borderRadius: 16, padding: "24px", marginBottom: 48, textAlign: "center",
         }}>
           <p style={{ margin: "0 0 16px", fontSize: 15, color: "#666", fontStyle: "italic", lineHeight: 1.75 }}>
-            "Problemet är aldrig att du har för få idéer. Problemet är att de försvinner — eller att du agerar på fel en."
+            "Problemet är aldrig att du har för få idéer. Problemet är att de försvinner, eller att du agerar på fel en."
           </p>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
             <div style={{
