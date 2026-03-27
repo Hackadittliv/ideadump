@@ -50,11 +50,14 @@ export default function LoginView({ onSignInGoogle, onSignInEmail, onSignUpEmail
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <h1 style={{
-            fontSize: 28, fontWeight: 700, margin: '0 0 4px',
-            background: 'linear-gradient(90deg, #00F0FF 0%, #F2B8B4 100%)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>IdeaDump</h1>
+          <h1
+            onClick={onBack}
+            style={{
+              fontSize: 28, fontWeight: 700, margin: '0 0 4px',
+              background: 'linear-gradient(90deg, #00F0FF 0%, #F2B8B4 100%)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              cursor: onBack ? 'pointer' : 'default',
+            }}>IdeaDump</h1>
           <p style={{ fontSize: 12, color: '#333', letterSpacing: 2, textTransform: 'uppercase', margin: 0 }}>
             Capture · Analyze · Act
           </p>
