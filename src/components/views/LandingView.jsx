@@ -299,7 +299,7 @@ export default function LandingView({ onShowLogin }) {
 
         {/* Footer */}
         <footer style={{ textAlign: "center", fontSize: 10, color: "#151520", letterSpacing: 1 }}>
-          © 2026{" "}
+          En produkt från{" "}
           <a href="https://hackadittliv.se" target="_blank" rel="noopener noreferrer"
             style={{ color: "#F2B8B4", textDecoration: "none" }}>Hackadittliv</a>
           {" · "}Byggt av{" "}

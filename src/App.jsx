@@ -417,7 +417,7 @@ export default function IdeaDump() {
         display: "flex", justifyContent: "center", gap: 6,
         fontSize: 10, color: "#222", letterSpacing: 1,
       }}>
-        <span>© 2026</span>
+        <span>En produkt från</span>
         <a href="https://hackadittliv.se" target="_blank" rel="noopener noreferrer"
           style={{ color: "#F2B8B4", textDecoration: "none" }}>Hackadittliv</a>
         <span>·</span>
