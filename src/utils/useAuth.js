@@ -16,13 +16,17 @@ export function useAuth() {
   const [betaApproved, setBetaApproved] = useState(false)
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Auth] event:', event, '| user:', session?.user?.email ?? 'null')
       const u = session?.user ?? null
       setUser(u)
       if (u) {
         try {
-          setBetaApproved(await checkBetaApproved(u.email))
-        } catch {
+          const approved = await checkBetaApproved(u.email)
+          console.log('[Auth] betaApproved:', approved)
+          setBetaApproved(approved)
+        } catch (err) {
+          console.error('[Auth] checkBetaApproved error:', err)
           setBetaApproved(false)
         }
       } else {
