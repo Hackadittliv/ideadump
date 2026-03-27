@@ -1,7 +1,7 @@
 // Login-vy — Google OAuth + E-post/lösenord
 import { useState } from 'react'
 
-export default function LoginView({ onSignInGoogle, onSignInEmail, onSignUpEmail }) {
+export default function LoginView({ onSignInGoogle, onSignInEmail, onSignUpEmail, onBack }) {
   const [mode, setMode]       = useState('login') // 'login' | 'signup'
   const [email, setEmail]     = useState('')
   const [password, setPassword] = useState('')
@@ -38,6 +38,15 @@ export default function LoginView({ onSignInGoogle, onSignInEmail, onSignUpEmail
       fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
     }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
+
+        {/* Tillbaka */}
+        {onBack && (
+          <button onClick={onBack} style={{
+            background: "none", border: "1px solid #1a1a2e", borderRadius: 10,
+            color: "#444", fontSize: 13, padding: "8px 14px", cursor: "pointer", marginBottom: 24,
+            display: "flex", alignItems: "center", gap: 6,
+          }}>← Tillbaka</button>
+        )}
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>

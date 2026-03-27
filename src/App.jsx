@@ -5,13 +5,15 @@ import SettingsView from "./components/views/SettingsView.jsx";
 import PrivacyView from "./components/views/PrivacyView.jsx";
 import LoginView from "./components/views/LoginView.jsx";
 import WeeklyReviewView from "./components/views/WeeklyReviewView.jsx";
+import LandingView from "./components/views/LandingView.jsx";
 import { useAuth } from "./utils/useAuth.js";
 import { saveToCloud, loadFromCloud } from "./utils/cloudSync.js";
 import { loadIdeas, saveIdeas, loadApiKeys } from "./utils/storage.js";
 import { analyzeIdea } from "./utils/claudeApi.js";
 
 export default function IdeaDump() {
-  const { user, loading: authLoading, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut } = useAuth();
+  const { user, loading: authLoading, betaApproved, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut } = useAuth();
+  const [showLogin, setShowLogin] = useState(false);
   const [view, setView]               = useState("capture");
   const [ideas, setIdeas]             = useState([]);
   const [transcript, setTranscript]   = useState("");
@@ -234,13 +236,38 @@ export default function IdeaDump() {
     }}>LADDAR...</div>
   );
 
-  // Visa login om ej inloggad
-  if (!user) return (
-    <LoginView
-      onSignInGoogle={signInWithGoogle}
-      onSignInEmail={signInWithEmail}
-      onSignUpEmail={signUpWithEmail}
-    />
+  // Visa login-modal eller landningssida om ej inloggad
+  if (!user) {
+    if (showLogin) return (
+      <LoginView
+        onSignInGoogle={signInWithGoogle}
+        onSignInEmail={signInWithEmail}
+        onSignUpEmail={signUpWithEmail}
+        onBack={() => setShowLogin(false)}
+      />
+    );
+    return <LandingView onShowLogin={() => setShowLogin(true)} />;
+  }
+
+  // Inloggad men ej beta-godkänd
+  if (!betaApproved) return (
+    <div style={{
+      minHeight: "100vh", display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      background: "#02020e", color: "#e0e0e0", padding: "40px 20px",
+      fontFamily: "'DM Sans', sans-serif", textAlign: "center",
+    }}>
+      <div style={{ fontSize: 48, marginBottom: 20 }}>⏳</div>
+      <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Du är på väntelistan</h2>
+      <p style={{ fontSize: 14, color: "#555", lineHeight: 1.7, maxWidth: 340, margin: "0 auto 28px" }}>
+        Din anmälan är registrerad. Vi hör av oss när din betaplats är redo.
+      </p>
+      <button onClick={signOut} style={{
+        background: "transparent", border: "1px solid #1a1a2e",
+        borderRadius: 10, padding: "10px 20px", color: "#444",
+        fontSize: 13, cursor: "pointer",
+      }}>Logga ut</button>
+    </div>
   );
 
   if (showPrivacy) return <PrivacyView onClose={() => setShowPrivacy(false)} />;
