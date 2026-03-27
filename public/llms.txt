@@ -28,7 +28,7 @@ Kräver egna API-nycklar: Anthropic (Claude-analys) och valfritt OpenAI (Whisper
 - **Grundare:** Christian Wederbrand
 - **Plats:** Göteborg, Sverige
 - **Varumärken:** HDL (Hacka Ditt Liv), Conversify, Life Is Awesome, Timeless Brick
-- **Webbplats:** https://ideadump.netlify.app
+- **Webbplats:** https://ideadump.se
 - **Hackadittliv:** https://hackadittliv.se
 - **Byggt av:** Conversify.io (https://conversify.io)
 

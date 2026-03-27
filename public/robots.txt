@@ -26,4 +26,4 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-Sitemap: https://ideadump.netlify.app/sitemap.xml
+Sitemap: https://ideadump.se/sitemap.xml
