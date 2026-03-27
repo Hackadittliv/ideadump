@@ -16,13 +16,16 @@ export const COLORS = {
 
 export const BRAND_COLORS = {
   HDL: "#00F0FF",
+  Hackadittliv: "#a8e6cf",
   Conversify: "#13c8ec",
   "Life Is Awesome": "#F2B8B4",
   "Timeless Brick": "#e8a87c",
+  "Hisingen Padel": "#7ec8e3",
+  "Frölunda Kampsportcenter": "#c9a0dc",
   Övrigt: "#666",
 };
 
-export const BRANDS = ["HDL", "Conversify", "Life Is Awesome", "Timeless Brick", "Övrigt"];
+export const BRANDS = ["HDL", "Hackadittliv", "Conversify", "Life Is Awesome", "Timeless Brick", "Hisingen Padel", "Frölunda Kampsportcenter", "Övrigt"];
 
 export const STATUSES = [
   { key: "inbox",    label: "Inbox",       icon: "📥" },
