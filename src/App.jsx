@@ -26,9 +26,16 @@ export default function IdeaDump() {
 
   const [showPrivacy, setShowPrivacy] = useState(false);
 
-  const recRef    = useRef(null);
-  const mediaRef  = useRef(null);
-  const chunksRef = useRef([]);
+  const recRef          = useRef(null);
+  const mediaRef        = useRef(null);
+  const chunksRef       = useRef([]);
+  const autoModeRef     = useRef(false);   // hands-free läge aktivt?
+  const transcriptRef   = useRef("");      // synkron kopia av transcript
+  const ideasRef        = useRef([]);      // synkron kopia av ideas (undviker stale closure)
+
+  // ── Håll refs synkade ──
+  useEffect(() => { transcriptRef.current = transcript; }, [transcript]);
+  useEffect(() => { ideasRef.current = ideas; }, [ideas]);
 
   // ── Ladda API-nycklar ──
   useEffect(() => {
@@ -38,6 +45,7 @@ export default function IdeaDump() {
 
     const params = new URLSearchParams(window.location.search);
     if (params.get("autorecord") === "true") {
+      autoModeRef.current = true;
       setTimeout(() => startBrowserSpeech(), 900);
     }
   }, []);
@@ -87,14 +95,24 @@ export default function IdeaDump() {
         if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
         else interim = e.results[i][0].transcript;
       }
-      setTranscript(final + interim);
+      const text = final + interim;
+      setTranscript(text);
+      transcriptRef.current = text;
     };
-    rec.onend = () => setIsRecording(false);
+    rec.onend = () => {
+      setIsRecording(false);
+      // Hands-free: analysera automatiskt när inspelningen stannar
+      if (autoModeRef.current && transcriptRef.current.trim()) {
+        autoModeRef.current = false;
+        handleAnalyzeRef.current(transcriptRef.current);
+      }
+    };
     rec.onerror = e => { flash("Mikrofon-fel: " + e.error); setIsRecording(false); };
     rec.start();
     recRef.current = rec;
     setIsRecording(true);
     setTranscript("");
+    transcriptRef.current = "";
   };
 
   const stopBrowserSpeech = () => { recRef.current?.stop(); setIsRecording(false); };
@@ -153,25 +171,27 @@ export default function IdeaDump() {
     }
   };
 
-  // ── Claude-analys ──
-  const handleAnalyze = async () => {
-    if (!transcript.trim()) return;
+  // ── Claude-analys (tar valfri text — används av både knapp och hands-free) ──
+  const handleAnalyze = useCallback(async (textOverride) => {
+    const text = (typeof textOverride === "string" ? textOverride : transcript).trim();
+    if (!text) return;
     setIsAnalyzing(true);
     flash("Claude analyserar din idé...", 99999);
     try {
-      const ai = await analyzeIdea(transcript);
+      const ai = await analyzeIdea(text);
       const newIdea = {
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
-        transcript: transcript.trim(),
+        transcript: text,
         brand: ai.suggestedBrand || "Övrigt",
         aiAnalysis: ai,
         manualScores: null,
         status: "inbox",
         notes: "",
       };
-      persistIdeas([newIdea, ...ideas]);
+      persistIdeas([newIdea, ...ideasRef.current]);
       setTranscript("");
+      transcriptRef.current = "";
       setStatusMsg("");
       flash("✨ Analyserad och sparad!");
       setTimeout(() => { setView("list"); setExpandedId(newIdea.id); }, 700);
@@ -180,7 +200,11 @@ export default function IdeaDump() {
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [transcript, persistIdeas, flash]);
+
+  // Ref för att anropas inifrån event-handlers utan stale closure
+  const handleAnalyzeRef = useRef(handleAnalyze);
+  useEffect(() => { handleAnalyzeRef.current = handleAnalyze; }, [handleAnalyze]);
 
   const handleSaveRaw = () => {
     if (!transcript.trim()) return;
