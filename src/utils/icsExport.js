@@ -34,9 +34,9 @@ export function exportToCalendar(idea) {
     `Skapad: ${new Date(idea.createdAt).toLocaleDateString("sv-SE")}`,
   ].filter(Boolean);
 
-  // Boka in 2 dagar framåt, kl 09:00
-  const start = new Date();
-  start.setDate(start.getDate() + 2);
+  // Använd deadline om satt, annars 2 dagar framåt, kl 09:00
+  const start = idea.deadline ? new Date(idea.deadline) : new Date();
+  if (!idea.deadline) start.setDate(start.getDate() + 2);
   start.setHours(9, 0, 0, 0);
 
   const end = new Date(start);

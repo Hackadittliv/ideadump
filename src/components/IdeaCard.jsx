@@ -8,7 +8,8 @@ import { exportToCalendar } from "../utils/icsExport.js";
 
 export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle, onTagClick }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const ice = iceTotal(idea);
+  const ice    = iceTotal(idea);
+  const overdue = idea.deadline && new Date(idea.deadline) < new Date() && idea.status !== "done";
   const color = BRAND_COLORS[idea.brand] || "#888";
   const ms = idea.manualScores || {};
   const ai = idea.aiAnalysis?.ice || {};
@@ -47,6 +48,17 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
                   day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
                 })}
               </span>
+              {idea.deadline && (
+                <span style={{
+                  fontSize: 10, fontWeight: 600,
+                  color: overdue ? "#ff6644" : "#555",
+                  background: overdue ? "#ff220012" : "transparent",
+                  borderRadius: 4, padding: overdue ? "1px 5px" : 0,
+                }}>
+                  {overdue ? "⚠️ " : "📅 "}
+                  {new Date(idea.deadline).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })}
+                </span>
+              )}
             </div>
 
             <p style={{ margin: 0, fontSize: 14, color: "#ddd", lineHeight: 1.55 }}>
@@ -209,6 +221,35 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Deadline */}
+          <div style={{ marginBottom: 14 }}>
+            <p style={{ margin: "0 0 6px", fontSize: 10, color: "#444", letterSpacing: 1, textTransform: "uppercase" }}>
+              📅 Deadline
+            </p>
+            <input
+              type="date"
+              value={idea.deadline || ""}
+              onClick={e => e.stopPropagation()}
+              onChange={e => onUpdate({ ...idea, deadline: e.target.value || null })}
+              style={{
+                background: "#080816", border: `1px solid ${overdue ? "#ff220044" : "#181830"}`,
+                borderRadius: 10, padding: "10px 12px", color: overdue ? "#ff6644" : "#aaa",
+                fontSize: 14, fontFamily: "inherit", outline: "none", width: "100%",
+                boxSizing: "border-box",
+              }}
+            />
+            {idea.deadline && (
+              <button
+                onClick={e => { e.stopPropagation(); onUpdate({ ...idea, deadline: null }); }}
+                style={{
+                  marginTop: 4, background: "none", border: "none",
+                  color: "#333", fontSize: 11, cursor: "pointer", padding: 0,
+                }}>
+                Rensa datum
+              </button>
+            )}
           </div>
 
           {/* Anteckningar */}

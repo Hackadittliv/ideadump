@@ -4,6 +4,7 @@ import ListView from "./components/views/ListView.jsx";
 import SettingsView from "./components/views/SettingsView.jsx";
 import PrivacyView from "./components/views/PrivacyView.jsx";
 import LoginView from "./components/views/LoginView.jsx";
+import WeeklyReviewView from "./components/views/WeeklyReviewView.jsx";
 import { useAuth } from "./utils/useAuth.js";
 import { saveToCloud, loadFromCloud } from "./utils/cloudSync.js";
 import { loadIdeas, saveIdeas, loadApiKeys } from "./utils/storage.js";
@@ -310,6 +311,7 @@ export default function IdeaDump() {
         {[
           { key: "capture", label: "🎙 Capture" },
           { key: "list",    label: `📋 Idéer${ideas.length ? ` (${ideas.length})` : ""}` },
+          { key: "weekly",  label: "📅 Vecka" },
           { key: "settings", label: "⚙️" },
         ].map(n => (
           <button key={n.key} onClick={() => setView(n.key)} className="nav-btn" style={{
@@ -361,6 +363,13 @@ export default function IdeaDump() {
           filterStatus={filterStatus}
           setFilterStatus={setFilterStatus}
           onGoCapture={() => setView("capture")}
+        />
+      )}
+
+      {view === "weekly" && (
+        <WeeklyReviewView
+          ideas={ideas}
+          onUpdateIdea={updated => persistIdeas(ideas.map(i => i.id === updated.id ? updated : i))}
         />
       )}
 
