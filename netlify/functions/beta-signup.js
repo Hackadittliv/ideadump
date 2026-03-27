@@ -31,6 +31,25 @@ exports.handler = async (event) => {
     return { statusCode: 500, body: JSON.stringify({ error: "Kunde inte spara. Försök igen." }) };
   }
 
+  // ── Lägg till i Hackadittliv CRM ──
+  const crmKey = process.env.HACKADITTLIV_API_KEY;
+  if (crmKey) {
+    await fetch("https://fcgjhzccucyyrpgggjwj.supabase.co/functions/v1/subscribe-lead", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": crmKey,
+      },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        first_name: name || "",
+        source: "ideadump",
+        tags: ["hdl_newsletter", "ideadump_beta"],
+        track: "ideadump",
+      }),
+    }).catch(() => {});
+  }
+
   // ── Skicka bekräftelsemail via Resend ──
   const resendKey = process.env.RESEND_API_KEY;
   if (resendKey) {

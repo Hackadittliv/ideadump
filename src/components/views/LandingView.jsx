@@ -182,8 +182,11 @@ export default function LandingView({ onShowLogin }) {
                   {loading ? "Skickar..." : "✨ Anmäl mig till beta"}
                 </button>
 
-                <p style={{ margin: 0, fontSize: 11, color: "#2a2a3a", textAlign: "center" }}>
-                  Ingen spam. Bara betainbjudan när det är dags.
+                <p style={{ margin: 0, fontSize: 11, color: "#2a2a3a", textAlign: "center", lineHeight: 1.6 }}>
+                  Genom att anmäla dig godkänner du att vi skickar tips från{" "}
+                  <a href="https://hackadittliv.se" target="_blank" rel="noopener noreferrer"
+                    style={{ color: "#F2B8B4", textDecoration: "none" }}>Hackadittliv</a>.
+                  Ingen spam — bara betainbjudan när det är dags.
                 </p>
               </form>
             </>
