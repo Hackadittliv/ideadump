@@ -53,7 +53,7 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
         <h2 style={{ fontSize: 16, fontWeight: 700, color: "#00F0FF", margin: "0 0 4px" }}>
           📅 Söndagsgenomgång
         </h2>
-        <p style={{ margin: 0, fontSize: 11, color: "#333", letterSpacing: 1, textTransform: "uppercase" }}>
+        <p style={{ margin: 0, fontSize: 11, color: "#777", letterSpacing: 1, textTransform: "uppercase" }}>
           {activeIdeas.length} aktiva idéer · {overdueIdeas.length > 0 ? `${overdueIdeas.length} försenade` : "inga försenade"}
         </p>
       </div>
@@ -178,14 +178,14 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
                               {idea.aiAnalysis?.summary || idea.transcript?.slice(0, 100)}
                             </p>
                             {reason && (
-                              <p style={{ margin: 0, fontSize: 12, color: "#666", fontStyle: "italic" }}>
+                              <p style={{ margin: 0, fontSize: 12, color: "#888", fontStyle: "italic" }}>
                                 {reason}
                               </p>
                             )}
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
                             <span style={{
-                              fontSize: 11, color: "#444", fontFamily: "DM Mono, monospace",
+                              fontSize: 11, color: "#888", fontFamily: "DM Mono, monospace",
                               textAlign: "right",
                             }}>
                               ICE {idea.aiAnalysis ? ((idea.aiAnalysis.ice?.impact + idea.aiAnalysis.ice?.confidence + idea.aiAnalysis.ice?.ease) / 3).toFixed(1) : "–"}
@@ -213,8 +213,8 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
               {/* Kör igen */}
               <button onClick={() => { setReview(null); setBooked(new Set()); }} style={{
                 width: "100%", marginTop: 8, padding: "10px",
-                background: "transparent", border: "1px solid #111128",
-                borderRadius: 10, color: "#333", fontSize: 12, cursor: "pointer",
+                background: "transparent", border: "1px solid #222240",
+                borderRadius: 10, color: "#666", fontSize: 12, cursor: "pointer",
               }}>
                 🔄 Kör ny analys
               </button>
@@ -224,7 +224,7 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
           {/* Alla aktiva idéer */}
           {!review && (
             <div style={{ marginTop: 4 }}>
-              <p style={{ fontSize: 11, color: "#333", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>
+              <p style={{ fontSize: 11, color: "#777", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>
                 Aktiva idéer
               </p>
               {activeIdeas.map(idea => {
@@ -238,17 +238,17 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
                   }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ fontSize: 10, color, fontWeight: 700 }}>{idea.brand}</span>
-                      <p style={{ margin: "4px 0 0", fontSize: 12, color: "#888", lineHeight: 1.4 }}>
+                      <p style={{ margin: "4px 0 0", fontSize: 12, color: "#aaa", lineHeight: 1.4 }}>
                         {idea.aiAnalysis?.summary?.slice(0, 70) || idea.transcript?.slice(0, 70)}...
                       </p>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       {idea.deadline && (
-                        <p style={{ margin: 0, fontSize: 10, color: overdue ? "#ff6644" : "#444" }}>
+                        <p style={{ margin: 0, fontSize: 10, color: overdue ? "#ff6644" : "#777" }}>
                           {overdue ? "⚠️ " : ""}{new Date(idea.deadline).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })}
                         </p>
                       )}
-                      <p style={{ margin: "2px 0 0", fontSize: 10, color: idea.status === "next" ? "#00F0FF" : "#333" }}>
+                      <p style={{ margin: "2px 0 0", fontSize: 10, color: idea.status === "next" ? "#00F0FF" : "#666" }}>
                         {idea.status === "next" ? "🎯 Next" : "📥 Inbox"}
                       </p>
                     </div>

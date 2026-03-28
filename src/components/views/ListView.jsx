@@ -87,7 +87,7 @@ export default function ListView({
               flexShrink: 0, padding: "10px 14px", minHeight: 44,
               background: filterBrand === b ? c + "22" : "transparent",
               border: `1px solid ${filterBrand === b ? c + "66" : "#111128"}`,
-              borderRadius: 20, color: filterBrand === b ? c : "#444",
+              borderRadius: 20, color: filterBrand === b ? c : "#777",
               fontSize: 11, fontWeight: filterBrand === b ? 700 : 400, cursor: "pointer",
             }}>{b}</button>
           );
@@ -103,7 +103,7 @@ export default function ListView({
               flexShrink: 0, padding: "10px 14px", minHeight: 44,
               background: filterStatus === s ? "#ffffff0d" : "transparent",
               border: `1px solid ${filterStatus === s ? "#ffffff22" : "#111128"}`,
-              borderRadius: 20, color: filterStatus === s ? "#ccc" : "#333",
+              borderRadius: 20, color: filterStatus === s ? "#ccc" : "#777",
               fontSize: 11, cursor: "pointer",
             }}>
               {s === "Alla" ? "Alla" : `${st?.icon} ${st?.label}`}
@@ -127,7 +127,7 @@ export default function ListView({
               flexShrink: 0, padding: "6px 12px", minHeight: 36,
               background: filterTag === t ? "#00F0FF22" : "transparent",
               border: `1px solid ${filterTag === t ? "#00F0FF44" : "#111128"}`,
-              borderRadius: 20, color: filterTag === t ? "#00F0FF" : "#444",
+              borderRadius: 20, color: filterTag === t ? "#00F0FF" : "#777",
               fontSize: 11, cursor: "pointer",
             }}>#{t}</button>
           ))}
@@ -136,7 +136,7 @@ export default function ListView({
 
       {/* Sortering + räknare */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-        <span style={{ fontSize: 11, color: "#333", letterSpacing: 1, textTransform: "uppercase" }}>
+        <span style={{ fontSize: 11, color: "#777", letterSpacing: 1, textTransform: "uppercase" }}>
           {filtered.length} idé{filtered.length !== 1 ? "er" : ""}
           {search && ` · "${search}"`}
           {filterTag && ` · #${filterTag}`}
@@ -147,7 +147,7 @@ export default function ListView({
               background: sortBy === o.key ? "#00F0FF18" : "transparent",
               border: `1px solid ${sortBy === o.key ? "#00F0FF33" : "#111128"}`,
               borderRadius: 8, padding: "5px 10px",
-              color: sortBy === o.key ? "#00F0FF" : "#333",
+              color: sortBy === o.key ? "#00F0FF" : "#777",
               fontSize: 10, cursor: "pointer",
             }}>{o.label}</button>
           ))}
@@ -158,7 +158,7 @@ export default function ListView({
       {filtered.length === 0 ? (
         <div style={{ textAlign: "center", paddingTop: 60 }}>
           <div style={{ fontSize: 48, marginBottom: 14 }}>💡</div>
-          <p style={{ color: "#333", fontSize: 14 }}>
+          <p style={{ color: "#777", fontSize: 14 }}>
             {ideas.length === 0 ? "Inga idéer än. Fånga din första!" : "Inga idéer matchar filtret."}
           </p>
           {ideas.length === 0 && (

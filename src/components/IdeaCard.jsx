@@ -43,7 +43,7 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
                   {energyWarning === "distraction" ? "⚠️ Distraction?" : "🔥 Genuine"}
                 </span>
               )}
-              <span style={{ fontSize: 10, color: "#444" }}>
+              <span style={{ fontSize: 10, color: "#777" }}>
                 {new Date(idea.createdAt).toLocaleDateString("sv-SE", {
                   day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
                 })}
@@ -51,7 +51,7 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
               {idea.deadline && (
                 <span style={{
                   fontSize: 10, fontWeight: 600,
-                  color: overdue ? "#ff6644" : "#555",
+                  color: overdue ? "#ff6644" : "#888",
                   background: overdue ? "#ff220012" : "transparent",
                   borderRadius: 4, padding: overdue ? "1px 5px" : 0,
                 }}>
@@ -91,7 +91,7 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
               style={{
                 background: idea.status === s.key ? color + "28" : "transparent",
                 border: `1px solid ${idea.status === s.key ? color : "#1e1e3a"}`,
-                color: idea.status === s.key ? color : "#555",
+                color: idea.status === s.key ? color : "#888",
                 borderRadius: 8, padding: "10px 12px", fontSize: 11, cursor: "pointer",
                 transition: "all 0.15s", minHeight: 44,
               }}>
@@ -125,7 +125,7 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
             style={{
               width: "100%", marginBottom: 16, padding: "11px",
               background: "#ffffff06", border: "1px solid #1e1e3a",
-              borderRadius: 10, color: "#555", fontSize: 12,
+              borderRadius: 10, color: "#888", fontSize: 12,
               cursor: "pointer", display: "flex", alignItems: "center",
               justifyContent: "center", gap: 6,
             }}
@@ -189,7 +189,7 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
 
           {/* Manuell scoring */}
           <div style={{ background: "#080816", borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
-            <p style={{ margin: "0 0 12px", fontSize: 10, color: "#444", letterSpacing: 1, textTransform: "uppercase" }}>
+            <p style={{ margin: "0 0 12px", fontSize: 10, color: "#777", letterSpacing: 1, textTransform: "uppercase" }}>
               Justera scoring
             </p>
             {["impact", "confidence", "ease"].map(k => (
@@ -204,7 +204,7 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
 
           {/* Varumärke */}
           <div style={{ marginBottom: 16 }}>
-            <p style={{ margin: "0 0 8px", fontSize: 10, color: "#444", letterSpacing: 1, textTransform: "uppercase" }}>
+            <p style={{ margin: "0 0 8px", fontSize: 10, color: "#777", letterSpacing: 1, textTransform: "uppercase" }}>
               Varumärke
             </p>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -214,7 +214,7 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
                   style={{
                     background: idea.brand === b ? BRAND_COLORS[b] + "28" : "transparent",
                     border: `1px solid ${idea.brand === b ? BRAND_COLORS[b] : "#1e1e3a"}`,
-                    color: idea.brand === b ? BRAND_COLORS[b] : "#555",
+                    color: idea.brand === b ? BRAND_COLORS[b] : "#888",
                     borderRadius: 8, padding: "4px 12px", fontSize: 11, cursor: "pointer",
                   }}>
                   {b}
@@ -225,7 +225,7 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
 
           {/* Deadline */}
           <div style={{ marginBottom: 14 }}>
-            <p style={{ margin: "0 0 6px", fontSize: 10, color: "#444", letterSpacing: 1, textTransform: "uppercase" }}>
+            <p style={{ margin: "0 0 6px", fontSize: 10, color: "#777", letterSpacing: 1, textTransform: "uppercase" }}>
               📅 Deadline
             </p>
             <input
@@ -245,7 +245,7 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
                 onClick={e => { e.stopPropagation(); onUpdate({ ...idea, deadline: null }); }}
                 style={{
                   marginTop: 4, background: "none", border: "none",
-                  color: "#333", fontSize: 11, cursor: "pointer", padding: 0,
+                  color: "#666", fontSize: 11, cursor: "pointer", padding: 0,
                 }}>
                 Rensa datum
               </button>
@@ -266,10 +266,10 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
           {/* Originaltranskript + radera */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
             <details style={{ flex: 1 }}>
-              <summary style={{ fontSize: 11, color: "#333", cursor: "pointer", userSelect: "none" }}>
+              <summary style={{ fontSize: 11, color: "#666", cursor: "pointer", userSelect: "none" }}>
                 Visa originaltranskript
               </summary>
-              <p style={{ fontSize: 12, color: "#444", marginTop: 8, lineHeight: 1.6, fontStyle: "italic" }}>
+              <p style={{ fontSize: 12, color: "#777", marginTop: 8, lineHeight: 1.6, fontStyle: "italic" }}>
                 "{idea.transcript}"
               </p>
             </details>
@@ -290,7 +290,7 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
               <button onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}
                 style={{
                   background: "transparent", border: "1px solid #1e1e2e", borderRadius: 8,
-                  padding: "6px 12px", color: "#333", fontSize: 12, cursor: "pointer", marginLeft: 12,
+                  padding: "6px 12px", color: "#666", fontSize: 12, cursor: "pointer", marginLeft: 12,
                 }}>
                 🗑
               </button>

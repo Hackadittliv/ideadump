@@ -18,7 +18,7 @@ export default function CaptureView({
             flex: 1, padding: "8px 0",
             background: voiceMode === k ? "#00F0FF18" : "transparent",
             border: `1px solid ${voiceMode === k ? "#00F0FF33" : "transparent"}`,
-            borderRadius: 9, color: voiceMode === k ? "#00F0FF" : "#444",
+            borderRadius: 9, color: voiceMode === k ? "#00F0FF" : "#777",
             fontSize: 12, cursor: "pointer",
           }}>{l}</button>
         ))}
@@ -40,7 +40,7 @@ export default function CaptureView({
         </button>
         <p style={{
           margin: "12px 0 0", fontSize: 12,
-          color: isRecording ? "#ff3355" : "#333", letterSpacing: 1, textTransform: "uppercase",
+          color: isRecording ? "#ff3355" : "#777", letterSpacing: 1, textTransform: "uppercase",
         }}>
           {isRecording ? "● Spelar in — tryck för att stoppa" : "Tryck för att börja tala"}
         </p>
@@ -60,7 +60,7 @@ export default function CaptureView({
         }} />
 
       {transcript && (
-        <div style={{ textAlign: "right", fontSize: 10, color: "#333", marginTop: 5 }}>
+        <div style={{ textAlign: "right", fontSize: 10, color: "#666", marginTop: 5 }}>
           {wordCount} ord
         </div>
       )}
@@ -74,7 +74,7 @@ export default function CaptureView({
             ? "linear-gradient(135deg, #00F0FF28 0%, #00c8d440 100%)" : "#070714",
           border: `1px solid ${transcript.trim() && !isAnalyzing ? "#00F0FF55" : "#0e0e22"}`,
           borderRadius: 14, fontSize: 14, fontWeight: 600,
-          color: transcript.trim() && !isAnalyzing ? "#00F0FF" : "#222",
+          color: transcript.trim() && !isAnalyzing ? "#00F0FF" : "#444",
           cursor: transcript.trim() && !isAnalyzing ? "pointer" : "not-allowed", transition: "all 0.2s",
         }}>
           {isAnalyzing ? "⏳ Analyserar..." : "✨ Analysera med Claude"}
@@ -83,7 +83,7 @@ export default function CaptureView({
           className="btn-ghost" style={{
           flex: 1, padding: "15px 0", background: "transparent",
           border: "1px solid #111128", borderRadius: 14,
-          color: "#333", fontSize: 13, cursor: transcript.trim() ? "pointer" : "not-allowed",
+          color: "#888", fontSize: 13, cursor: transcript.trim() ? "pointer" : "not-allowed",
         }}>
           💾 Spara
         </button>

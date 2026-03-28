@@ -232,7 +232,7 @@ export default function IdeaDump() {
   if (authLoading) return (
     <div style={{
       minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      background: "#02020e", color: "#333", fontSize: 13, letterSpacing: 2,
+      background: "#02020e", color: "#666", fontSize: 13, letterSpacing: 2,
     }}>LADDAR...</div>
   );
 
@@ -313,9 +313,9 @@ export default function IdeaDump() {
               background: "linear-gradient(90deg, #00F0FF 0%, #F2B8B4 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             }}>IdeaDump</h1>
-            <span style={{ fontSize: 10, color: "#333", letterSpacing: 2, textTransform: "uppercase" }}>by HDL</span>
+            <span style={{ fontSize: 10, color: "#666", letterSpacing: 2, textTransform: "uppercase" }}>by HDL</span>
           </div>
-          <p style={{ margin: 0, fontSize: 10, color: "#333", letterSpacing: 2, textTransform: "uppercase" }}>
+          <p style={{ margin: 0, fontSize: 10, color: "#666", letterSpacing: 2, textTransform: "uppercase" }}>
             Capture · Analyze · Act
           </p>
         </div>
@@ -345,7 +345,7 @@ export default function IdeaDump() {
             flex: n.key === "settings" ? "0 0 44px" : 1, padding: "11px 6px", minHeight: 44,
             background: view === n.key ? "linear-gradient(135deg, #00F0FF18 0%, #F2B8B418 100%)" : "transparent",
             border: `1px solid ${view === n.key ? "#00F0FF28" : "transparent"}`,
-            borderRadius: 10, color: view === n.key ? "#e0e0e0" : "#444",
+            borderRadius: 10, color: view === n.key ? "#e0e0e0" : "#777",
             fontSize: 13, fontWeight: view === n.key ? 600 : 400,
             cursor: "pointer", transition: "all 0.2s",
           }}>{n.label}</button>
@@ -415,7 +415,7 @@ export default function IdeaDump() {
         margin: "0 20px", padding: "20px 0",
         borderTop: "1px solid #0e0e1e",
         display: "flex", justifyContent: "center", gap: 6,
-        fontSize: 10, color: "#222", letterSpacing: 1,
+        fontSize: 10, color: "#555", letterSpacing: 1,
       }}>
         <span>En produkt från</span>
         <a href="https://hackadittliv.se" target="_blank" rel="noopener noreferrer"
@@ -427,7 +427,7 @@ export default function IdeaDump() {
         <span>·</span>
         <button onClick={() => setShowPrivacy(true)} style={{
           background: "none", border: "none", padding: 0,
-          color: "#333", fontSize: 10, letterSpacing: 1, cursor: "pointer",
+          color: "#666", fontSize: 10, letterSpacing: 1, cursor: "pointer",
         }}>Integritetspolicy</button>
       </div>
     </div>

@@ -17,7 +17,6 @@ export function useAuth() {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Auth] event:', event, '| user:', session?.user?.email ?? 'null')
       const u = session?.user ?? null
       setUser(u)
       if (u) {
