@@ -45,13 +45,18 @@ export default function IdeaDump() {
     const keys = loadApiKeys();
     setAnthropicKey(keys.anthropic);
     setOpenaiKey(keys.openai);
-
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("autorecord") === "true") {
-      autoModeRef.current = true;
-      setTimeout(() => startBrowserSpeech(), 900);
-    }
   }, []);
+
+  // Autorecord: vänta tills användaren är inloggad och beta-godkänd
+  const autorecordPending = useRef(
+    new URLSearchParams(window.location.search).get("autorecord") === "true"
+  );
+  useEffect(() => {
+    if (!user || !betaApproved || authLoading || !autorecordPending.current) return;
+    autorecordPending.current = false;
+    autoModeRef.current = true;
+    setTimeout(() => startBrowserSpeech(), 900);
+  }, [user, betaApproved, authLoading]);
 
   // ── Ladda idéer: cloud om inloggad, annars localStorage ──
   useEffect(() => {
