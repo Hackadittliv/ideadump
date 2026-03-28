@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import ScoreRing from "./ui/ScoreRing.jsx";
 import Slider from "./ui/Slider.jsx";
 import ProsCons from "./ui/ProsCons.jsx";
@@ -8,6 +8,7 @@ import { exportToCalendar } from "../utils/icsExport.js";
 
 export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle, onTagClick }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const dateInputRef = useRef(null);
   const ice    = iceTotal(idea);
   const overdue = idea.deadline && new Date(idea.deadline) < new Date() && idea.status !== "done";
   const color = BRAND_COLORS[idea.brand] || "#888";
@@ -228,28 +229,38 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
             <p style={{ margin: "0 0 6px", fontSize: 10, color: "#777", letterSpacing: 1, textTransform: "uppercase" }}>
               📅 Deadline
             </p>
+            {/* Dold native date-input triggas av knappen */}
             <input
+              ref={dateInputRef}
               type="date"
               value={idea.deadline || ""}
               onClick={e => e.stopPropagation()}
               onChange={e => onUpdate({ ...idea, deadline: e.target.value || null })}
-              style={{
-                background: "#080816", border: `1px solid ${overdue ? "#ff220044" : "#181830"}`,
-                borderRadius: 10, padding: "10px 12px", color: overdue ? "#ff6644" : "#aaa",
-                fontSize: 14, fontFamily: "inherit", outline: "none", width: "100%",
-                boxSizing: "border-box",
-              }}
+              style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 0, height: 0 }}
             />
-            {idea.deadline && (
-              <button
-                onClick={e => { e.stopPropagation(); onUpdate({ ...idea, deadline: null }); }}
-                style={{
-                  marginTop: 4, background: "none", border: "none",
-                  color: "#666", fontSize: 11, cursor: "pointer", padding: 0,
-                }}>
-                Rensa datum
-              </button>
-            )}
+            <button
+              onClick={e => { e.stopPropagation(); dateInputRef.current?.showPicker?.() || dateInputRef.current?.click(); }}
+              style={{
+                width: "100%", padding: "12px 16px", textAlign: "left",
+                background: "#080816", border: `1px solid ${overdue ? "#ff220044" : idea.deadline ? "#00F0FF33" : "#181830"}`,
+                borderRadius: 10, color: overdue ? "#ff6644" : idea.deadline ? "#00F0FF" : "#555",
+                fontSize: 14, fontFamily: "inherit", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 10,
+              }}
+            >
+              <span style={{ fontSize: 18 }}>📅</span>
+              <span>
+                {idea.deadline
+                  ? new Date(idea.deadline + "T12:00:00").toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+                  : "Välj datum"}
+              </span>
+              {idea.deadline && (
+                <span
+                  onClick={e => { e.stopPropagation(); onUpdate({ ...idea, deadline: null }); }}
+                  style={{ marginLeft: "auto", fontSize: 14, color: "#555", lineHeight: 1 }}
+                >✕</span>
+              )}
+            </button>
           </div>
 
           {/* Anteckningar */}
