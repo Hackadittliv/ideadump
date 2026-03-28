@@ -44,6 +44,11 @@ export default function CaptureView({
         }}>
           {isRecording ? "● Spelar in — tryck för att stoppa" : "Tryck för att börja tala"}
         </p>
+        {isRecording && (
+          <p style={{ margin: "8px 0 0", fontSize: 11, color: "#555", textAlign: "center" }}>
+            Håll skärmen på under inspelning
+          </p>
+        )}
       </div>
 
       {/* Transkript */}

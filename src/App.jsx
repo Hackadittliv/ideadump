@@ -31,6 +31,7 @@ export default function IdeaDump() {
 
   const recRef          = useRef(null);
   const mediaRef        = useRef(null);
+  const wakeLockRef     = useRef(null);
   const chunksRef       = useRef([]);
   const autoModeRef     = useRef(false);   // hands-free läge aktivt?
   const transcriptRef   = useRef("");      // synkron kopia av transcript
@@ -109,6 +110,8 @@ export default function IdeaDump() {
     };
     rec.onend = () => {
       setIsRecording(false);
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
       // Hands-free: analysera automatiskt när inspelningen stannar
       if (autoModeRef.current && transcriptRef.current.trim()) {
         autoModeRef.current = false;
@@ -119,11 +122,17 @@ export default function IdeaDump() {
     rec.start();
     recRef.current = rec;
     setIsRecording(true);
+    navigator.wakeLock?.request("screen").then(wl => { wakeLockRef.current = wl; }).catch(() => {});
     setTranscript("");
     transcriptRef.current = "";
   };
 
-  const stopBrowserSpeech = () => { recRef.current?.stop(); setIsRecording(false); };
+  const stopBrowserSpeech = () => {
+    recRef.current?.stop();
+    setIsRecording(false);
+    wakeLockRef.current?.release().catch(() => {});
+    wakeLockRef.current = null;
+  };
 
   // ── Whisper ──
   const startWhisper = async () => {
