@@ -250,6 +250,9 @@ export default function IdeaDump() {
     }}>LADDAR...</div>
   );
 
+  // Integritetspolicy — tillgänglig även utan inloggning
+  if (showPrivacy) return <PrivacyView onClose={() => setShowPrivacy(false)} />;
+
   // Visa login-modal eller landningssida om ej inloggad
   // Om autorecord=true i URL (t.ex. från Siri-genväg) → visa login direkt
   const autoRecordParam = new URLSearchParams(window.location.search).get("autorecord") === "true";
@@ -262,7 +265,10 @@ export default function IdeaDump() {
         onBack={() => setShowLogin(false)}
       />
     );
-    return <LandingView onShowLogin={() => setShowLogin(true)} />;
+    return <LandingView
+      onShowLogin={() => setShowLogin(true)}
+      onShowPrivacy={() => setShowPrivacy(true)}
+    />;
   }
 
   // Inloggad men ej beta-godkänd
@@ -285,8 +291,6 @@ export default function IdeaDump() {
       }}>Logga ut</button>
     </div>
   );
-
-  if (showPrivacy) return <PrivacyView onClose={() => setShowPrivacy(false)} />;
 
   return (
     <div style={{

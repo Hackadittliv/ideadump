@@ -42,12 +42,13 @@ const FEATURES = [
   },
 ];
 
-export default function LandingView({ onShowLogin }) {
+export default function LandingView({ onShowLogin, onShowPrivacy }) {
   const [email, setEmail]     = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone]       = useState(false);
   const [error, setError]     = useState("");
   const [count, setCount]     = useState(null);
+  const [gdprOk, setGdprOk]   = useState(false);
 
   useEffect(() => {
     fetch("/.netlify/functions/get-beta-count")
@@ -59,6 +60,10 @@ export default function LandingView({ onShowLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email.trim()) return;
+    if (!gdprOk) {
+      setError("Du måste godkänna integritetspolicyn för att fortsätta.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -275,23 +280,42 @@ export default function LandingView({ onShowLogin }) {
                   <p style={{ margin: 0, fontSize: 12, color: "#ff6b6b" }}>{error}</p>
                 )}
 
-                <button type="submit" disabled={loading} style={{
+                <label style={{
+                  display: "flex", alignItems: "flex-start", gap: 10,
+                  fontSize: 12, color: "#888", lineHeight: 1.6, cursor: "pointer",
+                  padding: "4px 0",
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={gdprOk}
+                    onChange={e => setGdprOk(e.target.checked)}
+                    style={{ marginTop: 3, accentColor: "#00F0FF", cursor: "pointer" }}
+                  />
+                  <span>
+                    Jag godkänner{" "}
+                    <button type="button" onClick={onShowPrivacy}
+                      style={{
+                        background: "none", border: "none", padding: 0,
+                        color: "#00F0FF", textDecoration: "underline",
+                        cursor: "pointer", font: "inherit",
+                      }}>integritetspolicyn</button>
+                    {" "}och att få tips från{" "}
+                    <a href="https://hackadittliv.se" target="_blank" rel="noopener noreferrer"
+                      style={{ color: "#F2B8B4", textDecoration: "none" }}>Hackadittliv</a>. Ingen spam.
+                  </span>
+                </label>
+
+                <button type="submit" disabled={loading || !gdprOk} style={{
                   padding: "15px",
-                  background: loading ? "#0a0a1a" : "linear-gradient(135deg, #00F0FF28 0%, #F2B8B428 100%)",
-                  border: `1px solid ${loading ? "#111" : "#00F0FF44"}`,
-                  borderRadius: 12, color: loading ? "#444" : "#00F0FF",
-                  fontSize: 15, fontWeight: 700, cursor: loading ? "default" : "pointer",
+                  background: loading || !gdprOk ? "#0a0a1a" : "linear-gradient(135deg, #00F0FF28 0%, #F2B8B428 100%)",
+                  border: `1px solid ${loading || !gdprOk ? "#111" : "#00F0FF44"}`,
+                  borderRadius: 12, color: loading || !gdprOk ? "#444" : "#00F0FF",
+                  fontSize: 15, fontWeight: 700,
+                  cursor: loading || !gdprOk ? "not-allowed" : "pointer",
                   transition: "all 0.2s",
                 }}>
                   {loading ? "Skickar..." : "Säkra min betaplats →"}
                 </button>
-
-                <p style={{ margin: 0, fontSize: 11, color: "#1e1e2e", textAlign: "center", lineHeight: 1.7 }}>
-                  Genom att anmäla dig godkänner du tips från{" "}
-                  <a href="https://hackadittliv.se" target="_blank" rel="noopener noreferrer"
-                    style={{ color: "#F2B8B4", textDecoration: "none" }}>Hackadittliv</a>.
-                  {" "}Ingen spam.
-                </p>
               </form>
             </>
           )}

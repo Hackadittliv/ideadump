@@ -169,6 +169,30 @@
               "@type": "Answer",
               "text": "Ja! IdeaDump är en PWA (Progressive Web App). Öppna den i Safari, tryck på dela-knappen och välj 'Lägg till på hemskärmen'. Du kan också ställa in en Siri-genväg som säger 'Hej Siri, dumpa en idé' och startar appen med mikrofonen igång direkt."
             }
+          },
+          {
+            "@type": "Question",
+            "name": "Vad kostar IdeaDump?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "IdeaDump är gratis under betaperioden — inget kreditkort krävs. Efter beta kommer det finnas en prisvärd prenumeration, men alla som anmäler sig under beta får förmånliga villkor."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Vilka AI-modeller använder IdeaDump?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "IdeaDump använder Anthropic Claude för idé-analys (ICE-scoring, pros/cons, coachingkommentar och nästa steg) och valfritt OpenAI Whisper för röstinspelning med hög noggrannhet. Browser Speech API används som gratis standardalternativ."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Är mina idéer privata?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Alla idéer sparas i din egen webbläsares localStorage eller i ditt personliga Supabase-konto. Ingen annan användare kan se dina idéer, och vi delar aldrig data med tredje part utöver de AI-tjänster (Claude, Whisper) som används för analys. Läs mer i integritetspolicyn."
+            }
           }
         ]
       }
