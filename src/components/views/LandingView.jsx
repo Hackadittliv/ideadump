@@ -1,5 +1,4 @@
-// Landningssida — IdeaDump Beta (optimerad konvertering)
-import { useState, useEffect } from "react";
+// Landningssida — IdeaDump (personligt verktyg från HDL)
 
 const STEPS = [
   {
@@ -10,12 +9,12 @@ const STEPS = [
   {
     num: "02",
     title: "Claude analyserar på sekunder",
-    desc: "Din idé får ICE-score, pros & cons, den största risken och ett konkret nästa steg inom 48 timmar.",
+    desc: "Idén får ICE-score, pros & cons, den största risken och ett konkret nästa steg inom 48 timmar.",
   },
   {
     num: "03",
-    title: "Du vet vad du ska göra",
-    desc: "Söndagsgenomgången pekar ut veckans tre bästa idéer. Du bokar in dem i kalendern med ett tryck.",
+    title: "Jag vet vad jag ska göra",
+    desc: "Söndagsgenomgången pekar ut veckans tre bästa idéer. De bokas in i kalendern med ett tryck.",
   },
 ];
 
@@ -23,7 +22,7 @@ const FEATURES = [
   {
     icon: "🎯",
     title: "Aldrig mer 'bra idé, men...'",
-    desc: "Claude flaggar direkt om din idé är en distraction eller en riktig möjlighet, baserat på dina faktiska mål.",
+    desc: "Claude flaggar direkt om idén är en distraction eller en riktig möjlighet, kopplat till mina faktiska mål.",
   },
   {
     icon: "💰",
@@ -43,51 +42,6 @@ const FEATURES = [
 ];
 
 export default function LandingView({ onShowLogin, onShowPrivacy }) {
-  const [email, setEmail]     = useState("");
-  const [loading, setLoading] = useState(false);
-  const [done, setDone]       = useState(false);
-  const [error, setError]     = useState("");
-  const [count, setCount]     = useState(null);
-  const [gdprOk, setGdprOk]   = useState(false);
-
-  useEffect(() => {
-    fetch("/.netlify/functions/get-beta-count")
-      .then(r => r.json())
-      .then(d => setCount(d.count))
-      .catch(() => {});
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    if (!gdprOk) {
-      setError("Du måste godkänna integritetspolicyn för att fortsätta.");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/.netlify/functions/beta-signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Något gick fel");
-      setDone(true);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const inputStyle = {
-    width: "100%", padding: "14px 16px", boxSizing: "border-box",
-    background: "#070714", border: "1px solid #1a1a2e", borderRadius: 12,
-    color: "#e0e0e0", fontSize: 16, fontFamily: "inherit", outline: "none",
-  };
-
   return (
     <div style={{
       minHeight: "100vh",
@@ -103,7 +57,6 @@ export default function LandingView({ onShowLogin, onShowPrivacy }) {
         .s3 { animation: fade-up 0.5s 0.16s ease both; }
         .s4 { animation: fade-up 0.5s 0.24s ease both; }
         * { -webkit-tap-highlight-color: transparent; }
-        input::placeholder { color: #2a2a3a; }
       `}</style>
 
       <div style={{ maxWidth: 520, margin: "0 auto", padding: "0 20px 80px" }}>
@@ -116,11 +69,11 @@ export default function LandingView({ onShowLogin, onShowPrivacy }) {
               background: "linear-gradient(90deg, #00F0FF 0%, #F2B8B4 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             }}>IdeaDump</span>
-            <span style={{ fontSize: 10, color: "#252535", letterSpacing: 2 }}>BETA</span>
+            <span style={{ fontSize: 10, color: "#666", letterSpacing: 2 }}>HDL LABS</span>
           </div>
           <button onClick={onShowLogin} style={{
             background: "transparent", border: "1px solid #1a1a2e",
-            borderRadius: 10, padding: "8px 16px", color: "#444",
+            borderRadius: 10, padding: "8px 16px", color: "#888",
             fontSize: 13, cursor: "pointer",
           }}>Logga in</button>
         </nav>
@@ -128,52 +81,43 @@ export default function LandingView({ onShowLogin, onShowPrivacy }) {
         {/* Hero */}
         <section className="s1" style={{ paddingTop: 40, paddingBottom: 52 }}>
 
-          {/* Urgency-badge */}
-          {count > 0 && (
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: "#00F0FF10", border: "1px solid #00F0FF25",
-              borderRadius: 20, padding: "6px 14px", marginBottom: 24,
-            }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#00F0FF", flexShrink: 0 }} />
-              <span style={{ fontSize: 12, color: "#00F0FF" }}>
-                {count} entreprenörer på väntelistan
-              </span>
-            </div>
-          )}
+          {/* Label */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "#00F0FF10", border: "1px solid #00F0FF25",
+            borderRadius: 20, padding: "6px 14px", marginBottom: 24,
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#00F0FF", flexShrink: 0 }} />
+            <span style={{ fontSize: 12, color: "#00F0FF" }}>
+              Bakom kulisserna på HDL
+            </span>
+          </div>
 
           <h1 style={{
             fontSize: 38, fontWeight: 700, lineHeight: 1.15,
             letterSpacing: -1.5, margin: "0 0 20px",
           }}>
-            Du har för många idéer.{" "}
+            Jag har för många idéer.{" "}
             <span style={{
               background: "linear-gradient(90deg, #00F0FF 0%, #F2B8B4 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             }}>
-              De flesta försvinner.
+              Så jag byggde ett system.
             </span>
           </h1>
 
-          <p style={{ fontSize: 17, color: "#555", lineHeight: 1.75, margin: "0 0 28px" }}>
-            IdeaDump fångar idéer med rösten på 30 sekunder, låter Claude analysera dem direkt och visar dig varje vecka exakt vad du ska agera på, kopplat till dina faktiska mål.
+          <p style={{ fontSize: 17, color: "#aaa", lineHeight: 1.75, margin: "0 0 28px" }}>
+            IdeaDump är mitt personliga verktyg för att fånga idéer med rösten, låta Claude analysera dem direkt, och varje vecka veta exakt vilka tre jag ska agera på. Kopplat till mina faktiska mål — inte vad som känns kul att jobba med.
           </p>
 
-          {/* Inline mini-CTA i hero */}
-          <button onClick={() => document.getElementById("signup-form").scrollIntoView({ behavior: "smooth" })}
-            style={{
-              padding: "14px 24px",
-              background: "linear-gradient(135deg, #00F0FF22, #F2B8B418)",
-              border: "1px solid #00F0FF33", borderRadius: 12,
-              color: "#00F0FF", fontSize: 14, fontWeight: 700, cursor: "pointer",
-            }}>
-            Säkra min betaplats →
-          </button>
+          <p style={{ fontSize: 14, color: "#666", lineHeight: 1.7, margin: "0 0 28px" }}>
+            Det här är inte en produkt till salu. Det är en titt bakom kulisserna på hur jag jobbar — och ett exempel på vilken typ av AI-verktyg vi bygger på Conversify.
+          </p>
         </section>
 
         {/* Hur det fungerar */}
         <section className="s2" style={{ marginBottom: 56 }}>
-          <p style={{ fontSize: 11, color: "#252535", letterSpacing: 2, textTransform: "uppercase", marginBottom: 24 }}>
+          <p style={{ fontSize: 11, color: "#666", letterSpacing: 2, textTransform: "uppercase", marginBottom: 24 }}>
             Så här fungerar det
           </p>
           <div style={{ display: "flex", flexDirection: "column" }}>
@@ -187,12 +131,12 @@ export default function LandingView({ onShowLogin, onShowPrivacy }) {
                     fontSize: 11, color: "#00F0FF", fontWeight: 700,
                   }}>{s.num}</div>
                   {i < STEPS.length - 1 && (
-                    <div style={{ width: 1, height: 32, background: "#111128", marginTop: 6 }} />
+                    <div style={{ width: 1, height: 32, background: "#222240", marginTop: 6 }} />
                   )}
                 </div>
                 <div style={{ paddingBottom: i < STEPS.length - 1 ? 16 : 0, paddingTop: 6 }}>
                   <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 600, color: "#ddd" }}>{s.title}</p>
-                  <p style={{ margin: 0, fontSize: 13, color: "#444", lineHeight: 1.65 }}>{s.desc}</p>
+                  <p style={{ margin: 0, fontSize: 13, color: "#888", lineHeight: 1.65 }}>{s.desc}</p>
                 </div>
               </div>
             ))}
@@ -201,20 +145,20 @@ export default function LandingView({ onShowLogin, onShowPrivacy }) {
 
         {/* Features */}
         <section className="s3" style={{ marginBottom: 56 }}>
-          <p style={{ fontSize: 11, color: "#252535", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>
-            Vad du faktiskt får
+          <p style={{ fontSize: 11, color: "#666", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>
+            Vad systemet gör
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {FEATURES.map(f => (
               <div key={f.title} style={{
-                background: "#070714", border: "1px solid #0e0e20",
+                background: "#070714", border: "1px solid #1a1a2e",
                 borderRadius: 16, padding: "18px 20px",
                 display: "flex", gap: 16, alignItems: "flex-start",
               }}>
                 <span style={{ fontSize: 24, flexShrink: 0, marginTop: 2 }}>{f.icon}</span>
                 <div>
-                  <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 600, color: "#ccc" }}>{f.title}</p>
-                  <p style={{ margin: 0, fontSize: 13, color: "#444", lineHeight: 1.65 }}>{f.desc}</p>
+                  <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 600, color: "#ddd" }}>{f.title}</p>
+                  <p style={{ margin: 0, fontSize: 13, color: "#888", lineHeight: 1.65 }}>{f.desc}</p>
                 </div>
               </div>
             ))}
@@ -223,11 +167,11 @@ export default function LandingView({ onShowLogin, onShowPrivacy }) {
 
         {/* Citat */}
         <section style={{
-          background: "#070714", border: "1px solid #0e0e20",
+          background: "#070714", border: "1px solid #1a1a2e",
           borderRadius: 16, padding: "24px", marginBottom: 48, textAlign: "center",
         }}>
-          <p style={{ margin: "0 0 16px", fontSize: 15, color: "#666", fontStyle: "italic", lineHeight: 1.75 }}>
-            "Problemet är aldrig att du har för få idéer. Problemet är att de försvinner, eller att du agerar på fel en."
+          <p style={{ margin: "0 0 16px", fontSize: 15, color: "#aaa", fontStyle: "italic", lineHeight: 1.75 }}>
+            "Problemet är aldrig att jag har för få idéer. Problemet är att de försvinner, eller att jag agerar på fel en."
           </p>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
             <div style={{
@@ -236,99 +180,53 @@ export default function LandingView({ onShowLogin, onShowPrivacy }) {
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 14, fontWeight: 700, color: "#00F0FF",
             }}>C</div>
-            <p style={{ margin: 0, fontSize: 11, color: "#252535", letterSpacing: 1 }}>
+            <p style={{ margin: 0, fontSize: 11, color: "#888", letterSpacing: 1 }}>
               CHRISTIAN WEDERBRAND · GRUNDARE, HACKADITTLIV
             </p>
           </div>
         </section>
 
-        {/* Formulär */}
-        <section id="signup-form" className="s4" style={{
+        {/* Conversify CTA */}
+        <section className="s4" style={{
           background: "linear-gradient(135deg, #0c0c1e 0%, #0f0f24 100%)",
-          border: "1px solid #00F0FF28", borderRadius: 20,
+          border: "1px solid #13c8ec33", borderRadius: 20,
           padding: "28px 24px", marginBottom: 48,
         }}>
-          {done ? (
-            <div style={{ textAlign: "center", padding: "24px 0" }}>
-              <div style={{ fontSize: 52, marginBottom: 16 }}>🎉</div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 10px" }}>Du är med på listan!</h2>
-              <p style={{ fontSize: 14, color: "#555", lineHeight: 1.7, margin: 0 }}>
-                Kolla mejlen — ett bekräftelsemail är på väg.<br />
-                Vi hör av oss när din plats är redo.
-              </p>
-            </div>
-          ) : (
-            <>
-              <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>
-                Säkra din betaplats
-              </h2>
-              <p style={{ fontSize: 13, color: "#333", margin: "0 0 20px" }}>
-                Gratis under beta. Inget kort krävs.
-              </p>
-
-              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <input
-                  type="email"
-                  placeholder="din@epost.se"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  style={inputStyle}
-                />
-
-                {error && (
-                  <p style={{ margin: 0, fontSize: 12, color: "#ff6b6b" }}>{error}</p>
-                )}
-
-                <label style={{
-                  display: "flex", alignItems: "flex-start", gap: 10,
-                  fontSize: 12, color: "#888", lineHeight: 1.6, cursor: "pointer",
-                  padding: "4px 0",
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={gdprOk}
-                    onChange={e => setGdprOk(e.target.checked)}
-                    style={{ marginTop: 3, accentColor: "#00F0FF", cursor: "pointer" }}
-                  />
-                  <span>
-                    Jag godkänner{" "}
-                    <button type="button" onClick={onShowPrivacy}
-                      style={{
-                        background: "none", border: "none", padding: 0,
-                        color: "#00F0FF", textDecoration: "underline",
-                        cursor: "pointer", font: "inherit",
-                      }}>integritetspolicyn</button>
-                    {" "}och att få tips från{" "}
-                    <a href="https://hackadittliv.se" target="_blank" rel="noopener noreferrer"
-                      style={{ color: "#F2B8B4", textDecoration: "none" }}>Hackadittliv</a>. Ingen spam.
-                  </span>
-                </label>
-
-                <button type="submit" disabled={loading || !gdprOk} style={{
-                  padding: "15px",
-                  background: loading || !gdprOk ? "#0a0a1a" : "linear-gradient(135deg, #00F0FF28 0%, #F2B8B428 100%)",
-                  border: `1px solid ${loading || !gdprOk ? "#111" : "#00F0FF44"}`,
-                  borderRadius: 12, color: loading || !gdprOk ? "#444" : "#00F0FF",
-                  fontSize: 15, fontWeight: 700,
-                  cursor: loading || !gdprOk ? "not-allowed" : "pointer",
-                  transition: "all 0.2s",
-                }}>
-                  {loading ? "Skickar..." : "Säkra min betaplats →"}
-                </button>
-              </form>
-            </>
-          )}
+          <p style={{ fontSize: 11, color: "#13c8ec", letterSpacing: 2, textTransform: "uppercase", margin: "0 0 12px", fontWeight: 700 }}>
+            Byggt av Conversify
+          </p>
+          <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 12px", lineHeight: 1.3 }}>
+            Vill du också bygga ett AI-verktyg för din verksamhet?
+          </h2>
+          <p style={{ fontSize: 14, color: "#aaa", lineHeight: 1.7, margin: "0 0 20px" }}>
+            IdeaDump är ett exempel på vad vi bygger på Conversify. Vi skapar skräddarsydda AI-verktyg åt företag och entreprenörer som vill jobba smartare, inte hårdare.
+          </p>
+          <a href="https://conversify.io" target="_blank" rel="noopener noreferrer"
+            style={{
+              display: "inline-block",
+              padding: "14px 24px",
+              background: "linear-gradient(135deg, #13c8ec28 0%, #00F0FF18 100%)",
+              border: "1px solid #13c8ec44", borderRadius: 12,
+              color: "#13c8ec", fontSize: 14, fontWeight: 700,
+              textDecoration: "none",
+            }}>
+            Utforska Conversify →
+          </a>
         </section>
 
         {/* Footer */}
-        <footer style={{ textAlign: "center", fontSize: 10, color: "#151520", letterSpacing: 1 }}>
+        <footer style={{ textAlign: "center", fontSize: 10, color: "#555", letterSpacing: 1 }}>
           En produkt från{" "}
           <a href="https://hackadittliv.se" target="_blank" rel="noopener noreferrer"
             style={{ color: "#F2B8B4", textDecoration: "none" }}>Hackadittliv</a>
           {" · "}Byggt av{" "}
           <a href="https://conversify.io" target="_blank" rel="noopener noreferrer"
             style={{ color: "#13c8ec", textDecoration: "none" }}>Conversify.io</a>
+          {" · "}
+          <button onClick={onShowPrivacy} style={{
+            background: "none", border: "none", padding: 0,
+            color: "#555", fontSize: 10, letterSpacing: 1, cursor: "pointer",
+          }}>Integritetspolicy</button>
         </footer>
 
       </div>

@@ -271,7 +271,7 @@ export default function IdeaDump() {
     />;
   }
 
-  // Inloggad men ej beta-godkänd
+  // Inloggad men ej godkänd — personligt verktyg, ej öppet
   if (!betaApproved) return (
     <div style={{
       minHeight: "100vh", display: "flex", flexDirection: "column",
@@ -279,14 +279,22 @@ export default function IdeaDump() {
       background: "#02020e", color: "#e0e0e0", padding: "40px 20px",
       fontFamily: "'DM Sans', sans-serif", textAlign: "center",
     }}>
-      <div style={{ fontSize: 48, marginBottom: 20 }}>⏳</div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 12px" }}>Du är på väntelistan</h2>
-      <p style={{ fontSize: 14, color: "#555", lineHeight: 1.7, maxWidth: 340, margin: "0 auto 28px" }}>
-        Din anmälan är registrerad. Vi hör av oss när din betaplats är redo.
+      <div style={{ fontSize: 48, marginBottom: 20 }}>🔒</div>
+      <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 12px" }}>Personligt verktyg</h2>
+      <p style={{ fontSize: 14, color: "#aaa", lineHeight: 1.7, maxWidth: 380, margin: "0 auto 20px" }}>
+        IdeaDump är Christian Wederbrands personliga produktivitetssystem och är inte öppet för andra användare.
+      </p>
+      <p style={{ fontSize: 13, color: "#888", lineHeight: 1.7, maxWidth: 380, margin: "0 auto 28px" }}>
+        Vill du ha ett liknande AI-verktyg byggt för din verksamhet?
+        <br />
+        <a href="https://conversify.io" target="_blank" rel="noopener noreferrer"
+          style={{ color: "#13c8ec", textDecoration: "none", fontWeight: 600 }}>
+          Kontakta Conversify →
+        </a>
       </p>
       <button onClick={signOut} style={{
         background: "transparent", border: "1px solid #1a1a2e",
-        borderRadius: 10, padding: "10px 20px", color: "#444",
+        borderRadius: 10, padding: "10px 20px", color: "#888",
         fontSize: 13, cursor: "pointer",
       }}>Logga ut</button>
     </div>
