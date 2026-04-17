@@ -188,6 +188,26 @@ export default function IdeaDump() {
     }
   };
 
+  // ── Bildanalys: skicka bild till Claude Vision, få tillbaka idé som text ──
+  const handleImageAnalyze = useCallback(async ({ base64, mediaType, note }) => {
+    flash("Claude läser bilden...", 99999);
+    try {
+      const res = await fetch("/.netlify/functions/claude-vision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64, mediaType, note: note?.trim() || "" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      const text = data.text || "";
+      setTranscript(text);
+      transcriptRef.current = text;
+      flash("Bild läst — tryck Analysera för full ICE-analys.", 4000);
+    } catch (e) {
+      flash("Vision-fel: " + e.message);
+    }
+  }, [flash]);
+
   // ── Claude-analys (tar valfri text — används av både knapp och hands-free) ──
   const handleAnalyze = useCallback(async (textOverride) => {
     const text = (typeof textOverride === "string" ? textOverride : transcript).trim();
@@ -403,6 +423,7 @@ export default function IdeaDump() {
           onToggleRecord={handleToggleRecord}
           onAnalyze={handleAnalyze}
           onSaveRaw={handleSaveRaw}
+          onImageAnalyze={handleImageAnalyze}
         />
       )}
 

@@ -1,7 +1,7 @@
 // Söndagsgenomgång — veckoanalys med Claude + kalenderbokning
 import { useState } from "react";
 import { exportToCalendar } from "../../utils/icsExport.js";
-import { BRAND_COLORS } from "../../styles/theme.js";
+import { getBrandColorsMap } from "../../styles/theme.js";
 
 export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
   const [loading, setLoading]   = useState(false);
@@ -9,7 +9,17 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
   const [error, setError]       = useState("");
   const [booked, setBooked]     = useState(new Set());
 
-  const activeIdeas = ideas.filter(i => i.status === "inbox" || i.status === "next");
+  const allActive = ideas.filter(i => i.status === "inbox" || i.status === "next");
+  const isBlocked = (idea) => {
+    const deps = idea.dependsOn || [];
+    if (deps.length === 0) return false;
+    return deps.some(id => {
+      const blocker = ideas.find(x => x.id === id);
+      return blocker && blocker.status !== "done";
+    });
+  };
+  const activeIdeas = allActive.filter(i => !isBlocked(i));
+  const blockedCount = allActive.length - activeIdeas.length;
   const overdueIdeas = ideas.filter(i =>
     i.deadline && new Date(i.deadline) < new Date() && i.status !== "done"
   );
@@ -54,7 +64,7 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
           📅 Söndagsgenomgång
         </h2>
         <p style={{ margin: 0, fontSize: 11, color: "#777", letterSpacing: 1, textTransform: "uppercase" }}>
-          {activeIdeas.length} aktiva idéer · {overdueIdeas.length > 0 ? `${overdueIdeas.length} försenade` : "inga försenade"}
+          {activeIdeas.length} aktiva idéer · {overdueIdeas.length > 0 ? `${overdueIdeas.length} försenade` : "inga försenade"}{blockedCount > 0 ? ` · ${blockedCount} blockerade` : ""}
         </p>
       </div>
 
@@ -161,7 +171,7 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
                   </p>
                   {top3Ideas.map((idea, i) => {
                     const reason = review.top3[i]?.reason;
-                    const color = BRAND_COLORS[idea.brand] || "#888";
+                    const color = getBrandColorsMap()[idea.brand] || "#888";
                     const isBooked = booked.has(idea.id);
                     return (
                       <div key={idea.id} style={{
@@ -228,7 +238,7 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
                 Aktiva idéer
               </p>
               {activeIdeas.map(idea => {
-                const color = BRAND_COLORS[idea.brand] || "#888";
+                const color = getBrandColorsMap()[idea.brand] || "#888";
                 const overdue = idea.deadline && new Date(idea.deadline) < new Date();
                 return (
                   <div key={idea.id} style={{

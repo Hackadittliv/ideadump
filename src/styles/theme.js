@@ -1,4 +1,10 @@
 // Temakonstanter för IdeaDump
+import {
+  getBrandNames,
+  getBrandColors as getBrandColorsFromConfig,
+  DEFAULT_BRANDS,
+} from "../utils/userConfig.js";
+
 export const COLORS = {
   bg: "#02020e",
   surface: "#0a0a1a",
@@ -14,18 +20,27 @@ export const COLORS = {
   warning: "#ffaa00",
 };
 
-export const BRAND_COLORS = {
-  HDL: "#00F0FF",
-  Hackadittliv: "#a8e6cf",
-  Conversify: "#13c8ec",
-  "Life Is Awesome": "#F2B8B4",
-  "Timeless Brick": "#e8a87c",
-  "Hisingen Padel": "#7ec8e3",
-  "Frölunda Kampsportcenter": "#c9a0dc",
-  Övrigt: "#666",
-};
+// Statiska defaults — används som fallback och för SSR/build
+export const DEFAULT_BRAND_NAMES = DEFAULT_BRANDS.map(b => b.name);
+export const DEFAULT_BRAND_COLOR_MAP = DEFAULT_BRANDS.reduce((acc, b) => {
+  acc[b.name] = b.color;
+  return acc;
+}, {});
 
-export const BRANDS = ["HDL", "Hackadittliv", "Conversify", "Life Is Awesome", "Timeless Brick", "Hisingen Padel", "Frölunda Kampsportcenter", "Övrigt"];
+// Dynamiska — läses från localStorage vid varje anrop så UI speglar ändringar från Settings
+export function getBrands() {
+  return getBrandNames();
+}
+
+export function getBrandColorsMap() {
+  return getBrandColorsFromConfig();
+}
+
+// Bakåtkompatibla exports — utgår från användarens aktuella config
+// Obs: dessa är ögonblicksbilder vid modul-init; komponenter bör använda
+// getBrands() / getBrandColorsMap() för att få senaste värdet efter redigering.
+export const BRANDS = getBrandNames();
+export const BRAND_COLORS = getBrandColorsFromConfig();
 
 export const STATUSES = [
   { key: "inbox",    label: "Inbox",       icon: "📥" },

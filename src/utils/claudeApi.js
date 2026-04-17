@@ -1,3 +1,5 @@
+import { loadUserConfig } from "./userConfig.js";
+
 // Extraherar JSON ur Claude-svar, även om det innehåller markdown-wrappers
 function extractJson(raw) {
   let text = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
@@ -17,10 +19,17 @@ const FALLBACK = {
 };
 
 export async function analyzeIdea(transcript) {
+  const userConfig = loadUserConfig();
   const res = await fetch("/.netlify/functions/claude-analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ transcript }),
+    body: JSON.stringify({
+      transcript,
+      userConfig: {
+        brands: userConfig.brands.map(b => b.name),
+        goals: userConfig.goals,
+      },
+    }),
   });
 
   if (!res.ok) {

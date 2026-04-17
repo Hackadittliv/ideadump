@@ -1,6 +1,6 @@
 import { useState } from "react";
 import IdeaCard from "../IdeaCard.jsx";
-import { BRANDS, STATUSES, BRAND_COLORS } from "../../styles/theme.js";
+import { STATUSES, getBrands, getBrandColorsMap } from "../../styles/theme.js";
 import { iceTotal } from "../../utils/iceCalc.js";
 
 const SORT_OPTIONS = [
@@ -80,8 +80,8 @@ export default function ListView({
 
       {/* Brand-filter */}
       <div style={{ overflowX: "auto", display: "flex", gap: 6, marginBottom: 10, paddingBottom: 4 }}>
-        {["Alla", ...BRANDS].map(b => {
-          const c = BRAND_COLORS[b] || "#00F0FF";
+        {["Alla", ...getBrands()].map(b => {
+          const c = getBrandColorsMap()[b] || "#00F0FF";
           return (
             <button key={b} onClick={() => setFilterBrand(b)} style={{
               flexShrink: 0, padding: "10px 14px", minHeight: 44,
@@ -176,6 +176,7 @@ export default function ListView({
           <div key={idea.id} className="appear">
             <IdeaCard
               idea={idea}
+              allIdeas={ideas}
               expanded={expandedId === idea.id}
               onToggle={() => setExpandedId(expandedId === idea.id ? null : idea.id)}
               onUpdate={onUpdateIdea}

@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sync": "bash scripts/sync-to-sheets.sh",
+    "ingest": "bash scripts/ingest-voice.sh",
+    "weekly": "bash scripts/weekly-report.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",

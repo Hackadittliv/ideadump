@@ -1,10 +1,36 @@
+import { useRef, useState } from "react";
+
 export default function CaptureView({
   transcript, setTranscript,
   isRecording, isAnalyzing,
   voiceMode, setVoiceMode,
   onToggleRecord, onAnalyze, onSaveRaw,
+  onImageAnalyze,
 }) {
   const wordCount = transcript.split(/\s+/).filter(Boolean).length;
+  const fileInputRef = useRef(null);
+  const [isReadingImage, setIsReadingImage] = useState(false);
+
+  const handleImagePick = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setIsReadingImage(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = reader.result;
+        const base64 = dataUrl.split(",")[1];
+        const mediaType = file.type || "image/jpeg";
+        await onImageAnalyze?.({ base64, mediaType, note: transcript });
+        setIsReadingImage(false);
+      };
+      reader.onerror = () => setIsReadingImage(false);
+      reader.readAsDataURL(file);
+    } catch {
+      setIsReadingImage(false);
+    }
+  };
 
   return (
     <div style={{ padding: "26px 20px" }} className="appear">
@@ -24,25 +50,57 @@ export default function CaptureView({
         ))}
       </div>
 
-      {/* Mikrofon-knapp */}
+      {/* Mikrofon + Kamera */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 30 }}>
-        <button onClick={onToggleRecord} style={{
-          width: 110, height: 110, borderRadius: "50%", cursor: "pointer",
-          background: isRecording
-            ? "radial-gradient(circle at 35% 35%, #ff4466 0%, #cc0033 100%)"
-            : "radial-gradient(circle at 35% 35%, #00F0FF18 0%, #003c4a 100%)",
-          border: `2px solid ${isRecording ? "#ff3355" : "#00F0FF55"}`,
-          fontSize: 40, display: "flex", alignItems: "center", justifyContent: "center",
-          animation: isRecording ? "rec-pulse 1.2s infinite" : "idle-glow 3s infinite",
-          transition: "background 0.3s, border 0.3s",
-        }}>
-          {isRecording ? "⏹" : "🎙"}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+          <button onClick={onToggleRecord} style={{
+            width: 110, height: 110, borderRadius: "50%", cursor: "pointer",
+            background: isRecording
+              ? "radial-gradient(circle at 35% 35%, #ff4466 0%, #cc0033 100%)"
+              : "radial-gradient(circle at 35% 35%, #00F0FF18 0%, #003c4a 100%)",
+            border: `2px solid ${isRecording ? "#ff3355" : "#00F0FF55"}`,
+            fontSize: 40, display: "flex", alignItems: "center", justifyContent: "center",
+            animation: isRecording ? "rec-pulse 1.2s infinite" : "idle-glow 3s infinite",
+            transition: "background 0.3s, border 0.3s",
+          }}>
+            {isRecording ? "⏹" : "🎙"}
+          </button>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isReadingImage || isAnalyzing}
+            title="Fånga idén från en bild"
+            style={{
+              width: 64, height: 64, borderRadius: "50%",
+              cursor: isReadingImage ? "default" : "pointer",
+              background: "radial-gradient(circle at 35% 35%, #F2B8B418 0%, #3a1e24 100%)",
+              border: "2px solid #F2B8B455",
+              fontSize: 24, display: "flex", alignItems: "center", justifyContent: "center",
+              opacity: isReadingImage ? 0.5 : 1,
+              transition: "all 0.2s",
+            }}>
+            {isReadingImage ? "⏳" : "📷"}
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleImagePick}
+            style={{ display: "none" }}
+          />
+        </div>
+
         <p style={{
           margin: "12px 0 0", fontSize: 12,
           color: isRecording ? "#ff3355" : "#777", letterSpacing: 1, textTransform: "uppercase",
         }}>
-          {isRecording ? "● Spelar in — tryck för att stoppa" : "Tryck för att börja tala"}
+          {isRecording
+            ? "● Spelar in — tryck för att stoppa"
+            : isReadingImage
+              ? "Claude läser bilden..."
+              : "Tala, skriv eller fota"}
         </p>
         {isRecording && (
           <p style={{ margin: "8px 0 0", fontSize: 11, color: "#555", textAlign: "center" }}>
@@ -55,7 +113,7 @@ export default function CaptureView({
       <textarea value={transcript} onChange={e => setTranscript(e.target.value)}
         autoFocus
         inputMode="text"
-        placeholder="Transkriptet dyker upp här medan du pratar... eller skriv direkt."
+        placeholder="Transkriptet dyker upp här medan du pratar... eller skriv direkt. Vid bildanalys kan du skriva en kommentar till bilden här först."
         style={{
           width: "100%", minHeight: 130, background: "#070714",
           border: `1px solid ${transcript ? "#1e1e3a" : "#0e0e22"}`,

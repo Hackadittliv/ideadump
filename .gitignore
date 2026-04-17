@@ -6,3 +6,6 @@ dist/
 .DS_Store
 *.local
 .netlify/
+.claude/
+ideas.json
+.ingest-tmp/

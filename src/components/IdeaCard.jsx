@@ -2,16 +2,56 @@ import { useState, useRef } from "react";
 import ScoreRing from "./ui/ScoreRing.jsx";
 import Slider from "./ui/Slider.jsx";
 import ProsCons from "./ui/ProsCons.jsx";
-import { BRANDS, STATUSES, BRAND_COLORS } from "../styles/theme.js";
+import { STATUSES, getBrands, getBrandColorsMap } from "../styles/theme.js";
 import { iceTotal } from "../utils/iceCalc.js";
 import { exportToCalendar } from "../utils/icsExport.js";
+import { validateIdea, tripleCheckIdea, recLabel } from "../utils/research/index.js";
 
-export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle, onTagClick }) {
+export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle, onTagClick, allIdeas = [] }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [validating, setValidating] = useState(null); // null | "smart" | "triple"
+  const [validationError, setValidationError] = useState("");
+  const [validationOpen, setValidationOpen] = useState(false);
+  const [showDepPicker, setShowDepPicker] = useState(false);
   const dateInputRef = useRef(null);
+
+  const dependsOn = idea.dependsOn || [];
+  const blockerIdeas = dependsOn
+    .map(id => allIdeas.find(i => i.id === id))
+    .filter(Boolean);
+  const activeBlockers = blockerIdeas.filter(b => b.status !== "done");
+  const isBlocked = activeBlockers.length > 0;
+
+  const toggleDependency = (targetId) => {
+    const next = dependsOn.includes(targetId)
+      ? dependsOn.filter(id => id !== targetId)
+      : [...dependsOn, targetId];
+    onUpdate({ ...idea, dependsOn: next });
+  };
+
+  const runValidation = async (mode) => {
+    setValidating(mode);
+    setValidationError("");
+    try {
+      const fn = mode === "triple" ? tripleCheckIdea : validateIdea;
+      const result = await fn(idea);
+      onUpdate({
+        ...idea,
+        validation: {
+          ...result,
+          searchedAt: new Date().toISOString(),
+        },
+      });
+      setValidationOpen(true);
+    } catch (e) {
+      setValidationError(e.message || "Okänt fel");
+    } finally {
+      setValidating(null);
+    }
+  };
   const ice    = iceTotal(idea);
   const overdue = idea.deadline && new Date(idea.deadline) < new Date() && idea.status !== "done";
-  const color = BRAND_COLORS[idea.brand] || "#888";
+  const color = getBrandColorsMap()[idea.brand] || "#888";
   const ms = idea.manualScores || {};
   const ai = idea.aiAnalysis?.ice || {};
   const energyWarning = idea.aiAnalysis?.energyWarning;
@@ -58,6 +98,15 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
                 }}>
                   {overdue ? "⚠️ " : "📅 "}
                   {new Date(idea.deadline).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })}
+                </span>
+              )}
+              {isBlocked && (
+                <span style={{
+                  fontSize: 10, fontWeight: 600,
+                  background: "#ffaa0018", border: "1px solid #ffaa0044",
+                  color: "#ffaa00", borderRadius: 4, padding: "1px 6px",
+                }}>
+                  ⛓ Blockerad av {activeBlockers.length}
                 </span>
               )}
             </div>
@@ -134,6 +183,166 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
             📅 Lägg till i Kalender
           </button>
 
+          {/* Marknadsvalidering — Exa + Perplexity + Claude web search */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={e => { e.stopPropagation(); runValidation("smart"); }}
+                disabled={validating !== null}
+                style={{
+                  flex: 1, padding: "11px", background: validating === "smart" ? "#00F0FF18" : "#00F0FF0a",
+                  border: "1px solid #00F0FF33", borderRadius: 10, color: "#00F0FF",
+                  fontSize: 12, cursor: validating ? "wait" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  opacity: validating && validating !== "smart" ? 0.5 : 1,
+                }}
+              >
+                {validating === "smart" ? "🔄 Söker via Exa..." : "🔎 Validera mot marknaden"}
+              </button>
+              {idea.status === "next" && (
+                <button
+                  onClick={e => { e.stopPropagation(); runValidation("triple"); }}
+                  disabled={validating !== null}
+                  style={{
+                    flex: 1, padding: "11px", background: validating === "triple" ? "#F2B8B418" : "#F2B8B40a",
+                    border: "1px solid #F2B8B433", borderRadius: 10, color: "#F2B8B4",
+                    fontSize: 12, cursor: validating ? "wait" : "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    opacity: validating && validating !== "triple" ? 0.5 : 1,
+                  }}
+                >
+                  {validating === "triple" ? "🔄 Tripel-check körs..." : "🔬 Tripel-check"}
+                </button>
+              )}
+            </div>
+
+            {validationError && (
+              <div style={{
+                marginTop: 8, padding: "8px 12px",
+                background: "#ff220012", border: "1px solid #ff220033",
+                borderRadius: 8, color: "#ff6644", fontSize: 11,
+              }}>
+                ⚠️ {validationError}
+              </div>
+            )}
+
+            {idea.validation && (
+              <div style={{
+                marginTop: 10, background: "#070714",
+                border: `1px solid ${recLabel(idea.validation.recommendation).color}33`,
+                borderRadius: 10, padding: "12px 14px",
+              }} onClick={e => e.stopPropagation()}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, cursor: "pointer" }}
+                     onClick={() => setValidationOpen(v => !v)}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{
+                      fontSize: 10, color: recLabel(idea.validation.recommendation).color,
+                      letterSpacing: 1, textTransform: "uppercase", fontWeight: 600,
+                    }}>
+                      {idea.validation.mode === "triple" ? "🔬 Tripel-check" : "🔎 Validering"}
+                    </span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600,
+                      color: recLabel(idea.validation.recommendation).color,
+                    }}>
+                      {recLabel(idea.validation.recommendation).label}
+                    </span>
+                    {typeof idea.validation.noveltyScore === "number" && (
+                      <span style={{ fontSize: 10, color: "#666" }}>
+                        Novelty {idea.validation.noveltyScore}/10
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 10, color: "#555" }}>
+                    {validationOpen ? "▲" : "▼"}
+                  </span>
+                </div>
+
+                <p style={{ margin: "0 0 8px", fontSize: 13, color: "#ccc", lineHeight: 1.5 }}>
+                  {idea.validation.conclusion}
+                </p>
+
+                {validationOpen && (
+                  <>
+                    {idea.validation.uniqueAngle && (
+                      <div style={{ marginTop: 10 }}>
+                        <div style={{ fontSize: 10, color: "#00F0FF", letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>
+                          🌟 Unik vinkel
+                        </div>
+                        <p style={{ margin: 0, fontSize: 12, color: "#aaa" }}>
+                          {idea.validation.uniqueAngle}
+                        </p>
+                      </div>
+                    )}
+
+                    {idea.validation.redFlag && (
+                      <div style={{ marginTop: 10 }}>
+                        <div style={{ fontSize: 10, color: "#ff6644", letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>
+                          ⚠️ Red flag
+                        </div>
+                        <p style={{ margin: 0, fontSize: 12, color: "#aaa" }}>
+                          {idea.validation.redFlag}
+                        </p>
+                      </div>
+                    )}
+
+                    {idea.validation.topCompetitors?.length > 0 && (
+                      <div style={{ marginTop: 10 }}>
+                        <div style={{ fontSize: 10, color: "#888", letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>
+                          Topp-konkurrenter
+                        </div>
+                        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#aaa" }}>
+                          {idea.validation.topCompetitors.map((c, i) => (
+                            <li key={i} style={{ marginBottom: 2 }}>{c}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {idea.validation.sources?.length > 0 && (
+                      <div style={{ marginTop: 12 }}>
+                        <div style={{ fontSize: 10, color: "#888", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>
+                          Källor ({idea.validation.sources.length})
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          {idea.validation.sources.slice(0, 10).map((s, i) => (
+                            <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
+                               style={{
+                                 fontSize: 11, color: "#888", textDecoration: "none",
+                                 padding: "6px 10px", background: "#0a0a18",
+                                 border: "1px solid #181830", borderRadius: 6,
+                                 display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                               }}>
+                              <span style={{ color: s.provider === "exa" ? "#00F0FF" : s.provider === "perplexity" ? "#F2B8B4" : "#e8a87c", fontSize: 9, marginRight: 6 }}>
+                                {s.provider}
+                              </span>
+                              {s.title || s.url}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {idea.validation.mode === "triple" && idea.validation.providersOk && (
+                      <div style={{ marginTop: 10, fontSize: 10, color: "#444" }}>
+                        Providers:{" "}
+                        {Object.entries(idea.validation.providersOk).map(([p, ok]) => (
+                          <span key={p} style={{ marginRight: 8, color: ok ? "#00ff8888" : "#ff664488" }}>
+                            {ok ? "✓" : "✗"} {p}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div style={{ marginTop: 10, fontSize: 9, color: "#444" }}>
+                      Kontrollerad {new Date(idea.validation.searchedAt).toLocaleString("sv-SE")}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
           {(idea.aiAnalysis?.pros?.length > 0 || idea.aiAnalysis?.cons?.length > 0) && (
             <ProsCons pros={idea.aiAnalysis.pros} cons={idea.aiAnalysis.cons} />
           )}
@@ -209,19 +418,96 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
               Varumärke
             </p>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {BRANDS.map(b => (
+              {getBrands().map(b => (
                 <button key={b}
                   onClick={e => { e.stopPropagation(); onUpdate({ ...idea, brand: b }); }}
                   style={{
-                    background: idea.brand === b ? BRAND_COLORS[b] + "28" : "transparent",
-                    border: `1px solid ${idea.brand === b ? BRAND_COLORS[b] : "#1e1e3a"}`,
-                    color: idea.brand === b ? BRAND_COLORS[b] : "#888",
+                    background: idea.brand === b ? getBrandColorsMap()[b] + "28" : "transparent",
+                    border: `1px solid ${idea.brand === b ? getBrandColorsMap()[b] : "#1e1e3a"}`,
+                    color: idea.brand === b ? getBrandColorsMap()[b] : "#888",
                     borderRadius: 8, padding: "4px 12px", fontSize: 11, cursor: "pointer",
                   }}>
                   {b}
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Beroenden */}
+          <div style={{ marginBottom: 14 }} onClick={e => e.stopPropagation()}>
+            <p style={{ margin: "0 0 8px", fontSize: 10, color: "#777", letterSpacing: 1, textTransform: "uppercase" }}>
+              ⛓ Beroenden — blockerad av
+            </p>
+            {blockerIdeas.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
+                {blockerIdeas.map(b => {
+                  const done = b.status === "done";
+                  return (
+                    <div key={b.id} style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "8px 12px",
+                      background: done ? "#00ff8808" : "#ffaa0008",
+                      border: `1px solid ${done ? "#00ff8833" : "#ffaa0033"}`,
+                      borderRadius: 8,
+                    }}>
+                      <span style={{ fontSize: 11, color: done ? "#00ff88" : "#ffaa00", flexShrink: 0 }}>
+                        {done ? "✅" : "⏳"}
+                      </span>
+                      <span style={{ fontSize: 12, color: "#ccc", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {b.aiAnalysis?.summary?.slice(0, 60) || b.transcript?.slice(0, 60)}
+                      </span>
+                      <button onClick={() => toggleDependency(b.id)}
+                        style={{
+                          background: "transparent", border: "none",
+                          color: "#666", fontSize: 14, cursor: "pointer", padding: 0,
+                        }}>✕</button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p style={{ margin: "0 0 8px", fontSize: 11, color: "#555", fontStyle: "italic" }}>
+                Inga beroenden — idén kan köras när som helst.
+              </p>
+            )}
+            <button onClick={() => setShowDepPicker(v => !v)}
+              style={{
+                width: "100%", padding: "8px", background: "transparent",
+                border: "1px dashed #1e1e3a", borderRadius: 8,
+                color: "#888", fontSize: 11, cursor: "pointer",
+              }}>
+              {showDepPicker ? "Stäng" : "+ Lägg till beroende"}
+            </button>
+            {showDepPicker && (
+              <div style={{
+                marginTop: 8, maxHeight: 180, overflowY: "auto",
+                background: "#080816", border: "1px solid #1e1e3a",
+                borderRadius: 8, padding: 6,
+              }}>
+                {allIdeas
+                  .filter(i => i.id !== idea.id && !dependsOn.includes(i.id) && i.status !== "done")
+                  .slice(0, 20)
+                  .map(i => (
+                    <button key={i.id} onClick={() => { toggleDependency(i.id); setShowDepPicker(false); }}
+                      style={{
+                        width: "100%", textAlign: "left", padding: "6px 8px",
+                        background: "transparent", border: "none",
+                        color: "#aaa", fontSize: 12, cursor: "pointer",
+                        borderRadius: 4, marginBottom: 2,
+                      }}>
+                      <span style={{ color: getBrandColorsMap()[i.brand] || "#888", fontSize: 9, marginRight: 6 }}>
+                        [{i.brand}]
+                      </span>
+                      {(i.aiAnalysis?.summary || i.transcript || "").slice(0, 70)}
+                    </button>
+                  ))}
+                {allIdeas.filter(i => i.id !== idea.id && !dependsOn.includes(i.id) && i.status !== "done").length === 0 && (
+                  <p style={{ margin: 0, padding: "8px 10px", fontSize: 11, color: "#666", fontStyle: "italic" }}>
+                    Inga andra aktiva idéer att välja bland.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Deadline */}
