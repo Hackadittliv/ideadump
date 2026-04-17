@@ -1,0 +1,128 @@
+// Skapar ett kalenderevent direkt i Google Calendar åt användaren.
+// Använder lagrad refresh_token, förnyar access_token vid behov.
+const { createClient } = require("@supabase/supabase-js");
+
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co";
+
+async function refreshAccessToken(refreshToken) {
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+  if (!res.ok) throw new Error("refresh_token ogiltig — logga in igen.");
+  return res.json();
+}
+
+exports.handler = async (event) => {
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method not allowed" };
+  }
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey || !process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return { statusCode: 503, body: JSON.stringify({ error: "Google OAuth ej konfigurerat." }) };
+  }
+
+  let userId, idea, scheduledDate;
+  try {
+    ({ userId, idea, scheduledDate } = JSON.parse(event.body));
+  } catch {
+    return { statusCode: 400, body: JSON.stringify({ error: "Ogiltig request body." }) };
+  }
+
+  if (!userId || !idea) {
+    return { statusCode: 400, body: JSON.stringify({ error: "userId och idea krävs." }) };
+  }
+
+  const supabase = createClient(SUPABASE_URL, serviceKey);
+  const { data: tokenRow, error: dbErr } = await supabase
+    .from("ideadump_google_tokens")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  if (dbErr || !tokenRow) {
+    return {
+      statusCode: 401,
+      body: JSON.stringify({ error: "Ingen Google-koppling hittad. Aktivera i Inställningar först." }),
+    };
+  }
+
+  // Förnya access_token om det är nära att expirera
+  let accessToken = tokenRow.access_token;
+  if (new Date(tokenRow.expires_at).getTime() - Date.now() < 2 * 60 * 1000) {
+    try {
+      const refreshed = await refreshAccessToken(tokenRow.refresh_token);
+      accessToken = refreshed.access_token;
+      await supabase
+        .from("ideadump_google_tokens")
+        .update({
+          access_token: accessToken,
+          expires_at: new Date(Date.now() + (refreshed.expires_in || 3600) * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId);
+    } catch (e) {
+      return { statusCode: 401, body: JSON.stringify({ error: e.message }) };
+    }
+  }
+
+  // Bygg eventet
+  const ai = idea.aiAnalysis || {};
+  const title = ai.nextActionSuggestion
+    ? `💡 ${ai.nextActionSuggestion.slice(0, 80)}`
+    : `💡 ${ai.summary?.slice(0, 80) || idea.transcript?.slice(0, 80) || "IdeaDump-idé"}`;
+
+  const descParts = [];
+  if (ai.summary) descParts.push(ai.summary);
+  if (ai.coachComment) descParts.push("\n💬 " + ai.coachComment);
+  if (ai.biggestRisk) descParts.push("\n⚠️ Största risken: " + ai.biggestRisk);
+  descParts.push(`\n\n— IdeaDump · ${idea.brand}`);
+  const description = descParts.join("\n");
+
+  // Starttid: angiven dag kl 09:00, eller idag kl 09:00 om inte specificerad
+  const startDay = scheduledDate || new Date().toISOString().slice(0, 10);
+  const startTime = `${startDay}T09:00:00`;
+  const endTime = `${startDay}T10:00:00`;
+
+  const eventBody = {
+    summary: title,
+    description,
+    start: { dateTime: startTime, timeZone: "Europe/Stockholm" },
+    end: { dateTime: endTime, timeZone: "Europe/Stockholm" },
+    reminders: { useDefault: true },
+  };
+
+  const createRes = await fetch(
+    "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(eventBody),
+    },
+  );
+
+  if (!createRes.ok) {
+    const err = await createRes.text();
+    return { statusCode: createRes.status, body: JSON.stringify({ error: "Kalendersskapande misslyckades: " + err }) };
+  }
+
+  const created = await createRes.json();
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      ok: true,
+      eventId: created.id,
+      htmlLink: created.htmlLink,
+    }),
+  };
+};

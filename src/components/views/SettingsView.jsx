@@ -1,12 +1,74 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { exportToCSV } from "../../utils/export.js";
 import { loadUserConfig, saveUserConfig, DEFAULT_BRANDS, DEFAULT_GOALS } from "../../utils/userConfig.js";
+import { pushSupported, getPushStatus, subscribePush, unsubscribePush, sendTestPush } from "../../utils/push.js";
+import { googleOAuthConfigured, openGoogleOAuthPopup } from "../../utils/googleCalendar.js";
 
 export default function SettingsView({ ideas, onClearIdeas, flash, user, onSignOut }) {
   const initial = loadUserConfig();
   const [brands, setBrands] = useState(initial.brands);
   const [goals, setGoals] = useState(initial.goals);
   const [configSaved, setConfigSaved] = useState(false);
+  const [pushState, setPushState] = useState("idle");
+  const [pushWorking, setPushWorking] = useState(false);
+  const [googleWorking, setGoogleWorking] = useState(false);
+
+  const handleGoogleConnect = async () => {
+    if (!user) { flash("Logga in först."); return; }
+    setGoogleWorking(true);
+    try {
+      await openGoogleOAuthPopup(user.id);
+      flash("✨ Google Calendar kopplat!");
+    } catch (e) {
+      flash("Fel: " + e.message);
+    } finally {
+      setGoogleWorking(false);
+    }
+  };
+
+  useEffect(() => {
+    if (pushSupported()) getPushStatus().then(setPushState);
+  }, []);
+
+  const handleSubscribe = async () => {
+    if (!user) { flash("Logga in först."); return; }
+    setPushWorking(true);
+    try {
+      await subscribePush(user.id);
+      setPushState("subscribed");
+      flash("🔔 Notiser aktiverade!");
+    } catch (e) {
+      flash("Fel: " + e.message);
+    } finally {
+      setPushWorking(false);
+    }
+  };
+
+  const handleUnsubscribe = async () => {
+    setPushWorking(true);
+    try {
+      await unsubscribePush();
+      setPushState("idle");
+      flash("🔕 Notiser avaktiverade");
+    } catch (e) {
+      flash("Fel: " + e.message);
+    } finally {
+      setPushWorking(false);
+    }
+  };
+
+  const handleTestPush = async () => {
+    if (!user) return;
+    setPushWorking(true);
+    try {
+      const result = await sendTestPush(user.id);
+      flash(`📨 Skickade till ${result.sent} enhet(er)`);
+    } catch (e) {
+      flash("Fel: " + e.message);
+    } finally {
+      setPushWorking(false);
+    }
+  };
 
   const stats = [
     { icon: "💡", val: ideas.length, label: "Idéer", color: "#00F0FF" },
@@ -74,6 +136,80 @@ export default function SettingsView({ ideas, onClearIdeas, flash, user, onSignO
             background: "none", border: "1px solid #3a1a1a", borderRadius: 8,
             color: "#aa4444", fontSize: 11, padding: "6px 12px", cursor: "pointer",
           }}>Logga ut</button>
+        </div>
+      )}
+
+      {/* Google Calendar-koppling */}
+      {googleOAuthConfigured() && user && (
+        <div style={{
+          background: "#070714", border: "1px solid #4285f422",
+          borderRadius: 12, padding: 14, marginBottom: 16,
+        }}>
+          <p style={{ margin: "0 0 10px", fontSize: 11, color: "#6ba5f7", fontWeight: 600 }}>
+            📅 Google Calendar
+          </p>
+          <p style={{ margin: "0 0 12px", fontSize: 11, color: "#888", lineHeight: 1.7 }}>
+            Boka idéer direkt i din Google Calendar istället för att ladda ner .ics-filer.
+          </p>
+          <button onClick={handleGoogleConnect} disabled={googleWorking} style={{
+            width: "100%", padding: "12px",
+            background: "linear-gradient(135deg, #4285f428 0%, #34a85328 100%)",
+            border: "1px solid #4285f444", borderRadius: 10,
+            color: "#6ba5f7", fontSize: 13, fontWeight: 600, cursor: "pointer",
+          }}>
+            {googleWorking ? "⏳ Öppnar Google..." : "🔗 Koppla Google Calendar"}
+          </button>
+        </div>
+      )}
+
+      {/* Push-notiser */}
+      {pushSupported() && user && (
+        <div style={{
+          background: "#070714", border: "1px solid #F2B8B418",
+          borderRadius: 12, padding: 14, marginBottom: 16,
+        }}>
+          <p style={{ margin: "0 0 10px", fontSize: 11, color: "#F2B8B4", fontWeight: 600 }}>
+            🔔 Push-notiser
+          </p>
+          <p style={{ margin: "0 0 12px", fontSize: 11, color: "#888", lineHeight: 1.7 }}>
+            Få pushnotis när en deadline närmar sig eller passerat. Söndagsgenomgången skickas via mail.
+          </p>
+          {pushState === "denied" && (
+            <p style={{ margin: 0, fontSize: 12, color: "#ff6644" }}>
+              Notiser är blockerade i webbläsaren. Aktivera i webbläsarinställningarna.
+            </p>
+          )}
+          {pushState !== "denied" && (
+            <div style={{ display: "flex", gap: 8 }}>
+              {pushState === "subscribed" ? (
+                <>
+                  <button onClick={handleTestPush} disabled={pushWorking} style={{
+                    flex: 1, padding: "10px",
+                    background: "#F2B8B418", border: "1px solid #F2B8B444",
+                    borderRadius: 10, color: "#F2B8B4", fontSize: 12, cursor: "pointer",
+                  }}>
+                    📨 Skicka test
+                  </button>
+                  <button onClick={handleUnsubscribe} disabled={pushWorking} style={{
+                    flex: 1, padding: "10px",
+                    background: "transparent", border: "1px solid #3a1a1a",
+                    borderRadius: 10, color: "#aa4444", fontSize: 12, cursor: "pointer",
+                  }}>
+                    🔕 Avaktivera
+                  </button>
+                </>
+              ) : (
+                <button onClick={handleSubscribe} disabled={pushWorking} style={{
+                  flex: 1, padding: "12px",
+                  background: "linear-gradient(135deg, #F2B8B428 0%, #00F0FF18 100%)",
+                  border: "1px solid #F2B8B444", borderRadius: 10,
+                  color: "#F2B8B4", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                }}>
+                  {pushWorking ? "⏳ Aktiverar..." : "🔔 Aktivera push-notiser"}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 

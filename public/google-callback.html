@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <title>Google-koppling klar</title>
+  <style>
+    body { background: #02020e; color: #e0e0e0; font-family: -apple-system, sans-serif; padding: 40px 20px; text-align: center; }
+    .box { max-width: 340px; margin: 60px auto; padding: 28px; background: #0c0c1e; border: 1px solid #00F0FF33; border-radius: 16px; }
+    h1 { font-size: 18px; margin: 0 0 12px; background: linear-gradient(90deg, #00F0FF, #F2B8B4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    p { font-size: 13px; color: #888; line-height: 1.7; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>✨ Google Calendar ansluten</h1>
+    <p>Du kan stänga detta fönster nu.</p>
+  </div>
+  <script>
+    // Skicka auth-koden tillbaka till huvudfönstret via postMessage
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code");
+    const state = url.searchParams.get("state");
+    const error = url.searchParams.get("error");
+
+    if (window.opener) {
+      window.opener.postMessage({
+        type: "google-oauth-code",
+        code, state, error,
+      }, window.location.origin);
+      setTimeout(() => window.close(), 500);
+    } else {
+      document.querySelector("p").textContent = "Hittade inget huvudfönster — stäng och försök igen.";
+    }
+  </script>
+</body>
+</html>

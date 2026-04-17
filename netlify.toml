@@ -7,9 +7,24 @@
   NODE_VERSION = "20"
 
 [[redirects]]
+  from = "/google-callback.html"
+  to = "/google-callback.html"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Schemalagd söndagsgenomgång — varje söndag 17:00 UTC (=18:00 vintertid,
+# 19:00 sommartid svensk tid). Körs automatiskt av Netlify utan extern trigger.
+[functions."scheduled-weekly-review"]
+  schedule = "0 17 * * 0"
+
+# Deadline-påminnelse — varje morgon kl 7:00 UTC (=8:00 vintertid, 9:00 sommartid svensk tid).
+[functions."scheduled-deadline-check"]
+  schedule = "0 7 * * *"
 
 # Lokalt: kopiera .env.example → .env och fyll i dina nycklar
 # Kör sedan: netlify dev

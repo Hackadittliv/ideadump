@@ -430,6 +430,7 @@ export default function IdeaDump() {
       {view === "list" && (
         <ListView
           ideas={ideas}
+          user={user}
           onUpdateIdea={updated => persistIdeas(ideas.map(i => i.id === updated.id ? updated : i))}
           onDeleteIdea={id => persistIdeas(ideas.filter(i => i.id !== id))}
           expandedId={expandedId}

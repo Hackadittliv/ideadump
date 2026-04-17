@@ -6,14 +6,63 @@ import { STATUSES, getBrands, getBrandColorsMap } from "../styles/theme.js";
 import { iceTotal } from "../utils/iceCalc.js";
 import { exportToCalendar } from "../utils/icsExport.js";
 import { validateIdea, tripleCheckIdea, recLabel } from "../utils/research/index.js";
+import { googleOAuthConfigured, createCalendarEvent } from "../utils/googleCalendar.js";
 
-export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle, onTagClick, allIdeas = [] }) {
+export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle, onTagClick, allIdeas = [], user }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [validating, setValidating] = useState(null); // null | "smart" | "triple"
   const [validationError, setValidationError] = useState("");
   const [validationOpen, setValidationOpen] = useState(false);
   const [showDepPicker, setShowDepPicker] = useState(false);
+  const [notionStatus, setNotionStatus] = useState(""); // "", "syncing", "ok", "error"
+  const [notionMsg, setNotionMsg] = useState("");
+  const [calStatus, setCalStatus] = useState(""); // "", "syncing", "ok", "error"
+  const [calMsg, setCalMsg] = useState("");
   const dateInputRef = useRef(null);
+
+  const handleCalendar = async () => {
+    // Försök Google Calendar direkt om OAuth är konfad + användare inloggad
+    if (googleOAuthConfigured() && user?.id) {
+      setCalStatus("syncing");
+      setCalMsg("");
+      try {
+        const scheduledDate = idea.deadline || new Date().toISOString().slice(0, 10);
+        const result = await createCalendarEvent(user.id, idea, scheduledDate);
+        setCalStatus("ok");
+        setCalMsg("Bokad i Google Calendar");
+        onUpdate({ ...idea, googleEventId: result.eventId, googleEventLink: result.htmlLink });
+        setTimeout(() => setCalStatus(""), 2500);
+        return;
+      } catch (e) {
+        setCalStatus("error");
+        setCalMsg(e.message || "Kunde ej boka direkt");
+        // Fallthrough till .ics om direktbokning misslyckas
+      }
+    }
+    // Fallback: ladda ner .ics-fil
+    exportToCalendar(idea);
+  };
+
+  const syncToNotion = async () => {
+    setNotionStatus("syncing");
+    setNotionMsg("");
+    try {
+      const res = await fetch("/.netlify/functions/notion-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idea }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      setNotionStatus("ok");
+      setNotionMsg(data.updated ? "Uppdaterad i Notion" : "Skapad i Notion");
+      onUpdate({ ...idea, notionUrl: data.url, notionSyncedAt: new Date().toISOString() });
+      setTimeout(() => setNotionStatus(""), 2500);
+    } catch (e) {
+      setNotionStatus("error");
+      setNotionMsg(e.message || "Sync misslyckades");
+    }
+  };
 
   const dependsOn = idea.dependsOn || [];
   const blockerIdeas = dependsOn
@@ -169,19 +218,80 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
             </div>
           )}
 
-          {/* Lägg till i kalender */}
-          <button
-            onClick={e => { e.stopPropagation(); exportToCalendar(idea); }}
-            style={{
-              width: "100%", marginBottom: 16, padding: "11px",
-              background: "#ffffff06", border: "1px solid #1e1e3a",
-              borderRadius: 10, color: "#888", fontSize: 12,
-              cursor: "pointer", display: "flex", alignItems: "center",
-              justifyContent: "center", gap: 6,
-            }}
-          >
-            📅 Lägg till i Kalender
-          </button>
+          {/* Lägg till i kalender + Notion-sync */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <button
+              onClick={e => { e.stopPropagation(); handleCalendar(); }}
+              disabled={calStatus === "syncing"}
+              style={{
+                flex: 1, padding: "11px",
+                background: calStatus === "ok" ? "#00ff8818"
+                  : calStatus === "error" ? "#ff220018"
+                  : idea.googleEventId ? "#4285f412" : "#ffffff06",
+                border: `1px solid ${calStatus === "ok" ? "#00ff8844"
+                  : calStatus === "error" ? "#ff220044"
+                  : idea.googleEventId ? "#4285f444" : "#1e1e3a"}`,
+                borderRadius: 10,
+                color: calStatus === "ok" ? "#00ff88"
+                  : calStatus === "error" ? "#ff6644"
+                  : idea.googleEventId ? "#6ba5f7" : "#888",
+                fontSize: 12,
+                cursor: calStatus === "syncing" ? "wait" : "pointer",
+                display: "flex", alignItems: "center",
+                justifyContent: "center", gap: 6,
+              }}
+            >
+              {calStatus === "syncing"
+                ? "⏳ Bokar..."
+                : calStatus === "ok"
+                  ? "✓ " + calMsg
+                  : idea.googleEventId
+                    ? "📅 Bokad — uppdatera"
+                    : "📅 Kalender"}
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); syncToNotion(); }}
+              disabled={notionStatus === "syncing"}
+              style={{
+                flex: 1, padding: "11px",
+                background: notionStatus === "ok" ? "#00ff8818"
+                  : notionStatus === "error" ? "#ff220018"
+                  : idea.notionUrl ? "#F2B8B412" : "#ffffff06",
+                border: `1px solid ${notionStatus === "ok" ? "#00ff8844"
+                  : notionStatus === "error" ? "#ff220044"
+                  : idea.notionUrl ? "#F2B8B433" : "#1e1e3a"}`,
+                borderRadius: 10,
+                color: notionStatus === "ok" ? "#00ff88"
+                  : notionStatus === "error" ? "#ff6644"
+                  : idea.notionUrl ? "#F2B8B4" : "#888",
+                fontSize: 12, cursor: notionStatus === "syncing" ? "wait" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              }}
+            >
+              {notionStatus === "syncing"
+                ? "🔄 Synkar..."
+                : notionStatus === "ok"
+                  ? "✓ " + notionMsg
+                  : idea.notionUrl
+                    ? "📓 Uppdatera Notion"
+                    : "📓 Synka till Notion"}
+            </button>
+          </div>
+          {notionStatus === "error" && (
+            <p style={{ margin: "-8px 0 12px", fontSize: 11, color: "#ff6644" }}>
+              ⚠️ {notionMsg}
+            </p>
+          )}
+          {idea.notionUrl && notionStatus !== "error" && (
+            <a href={idea.notionUrl} target="_blank" rel="noopener noreferrer"
+               onClick={e => e.stopPropagation()}
+               style={{
+                 display: "block", marginTop: -8, marginBottom: 14,
+                 fontSize: 11, color: "#F2B8B4", textDecoration: "none", textAlign: "center",
+               }}>
+              Öppna i Notion →
+            </a>
+          )}
 
           {/* Marknadsvalidering — Exa + Perplexity + Claude web search */}
           <div style={{ marginBottom: 16 }}>

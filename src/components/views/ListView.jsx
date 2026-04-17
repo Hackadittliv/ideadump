@@ -15,7 +15,7 @@ export default function ListView({
   expandedId, setExpandedId,
   filterBrand, setFilterBrand,
   filterStatus, setFilterStatus,
-  onGoCapture,
+  onGoCapture, user,
 }) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("ice");
@@ -177,6 +177,7 @@ export default function ListView({
             <IdeaCard
               idea={idea}
               allIdeas={ideas}
+              user={user}
               expanded={expandedId === idea.id}
               onToggle={() => setExpandedId(expandedId === idea.id ? null : idea.id)}
               onUpdate={onUpdateIdea}
