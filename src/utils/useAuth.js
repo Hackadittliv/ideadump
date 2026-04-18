@@ -16,22 +16,22 @@ export function useAuth() {
   const [betaApproved, setBetaApproved] = useState(false)
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // VIKTIGT: Inte await:a andra Supabase-anrop inuti onAuthStateChange
+    // — det deadlockar auth-SDK:n. Beta-kollen körs fire-and-forget.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null
       setUser(u)
+      setLoading(false)
       if (u) {
-        try {
-          const approved = await checkBetaApproved(u.email)
-          console.log('[Auth] betaApproved:', approved)
-          setBetaApproved(approved)
-        } catch (err) {
-          console.error('[Auth] checkBetaApproved error:', err)
-          setBetaApproved(false)
-        }
+        checkBetaApproved(u.email)
+          .then(approved => setBetaApproved(approved))
+          .catch(err => {
+            console.error('[Auth] checkBetaApproved error:', err)
+            setBetaApproved(false)
+          })
       } else {
         setBetaApproved(false)
       }
-      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
