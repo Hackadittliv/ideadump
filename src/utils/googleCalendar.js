@@ -43,7 +43,7 @@ export function openGoogleOAuthPopup(userId) {
 
     const cleanup = () => {
       settled = true;
-      clearInterval(timer);
+      clearTimeout(timeout);
       window.removeEventListener("message", handleMessage);
       window.removeEventListener("storage", handleStorage);
       channel?.close();
@@ -98,14 +98,14 @@ export function openGoogleOAuthPopup(userId) {
     };
     window.addEventListener("message", handleMessage);
 
-    // Popup-stängningsfallback — om inget kommit in när popupen stängs
-    const timer = setInterval(() => {
+    // Timeout — om användaren aldrig slutför auth på 5 min.
+    // Vi kan inte polla popup.closed eftersom COOP blockerar den läsningen
+    // på cross-origin popups (Chrome returnerar true spuriöst).
+    const timeout = setTimeout(() => {
       if (settled) return;
-      if (popup?.closed) {
-        cleanup();
-        reject(new Error("Popup stängdes innan auth klar."));
-      }
-    }, 500);
+      cleanup();
+      reject(new Error("Auth tog för lång tid — försök igen."));
+    }, 5 * 60 * 1000);
   });
 }
 
