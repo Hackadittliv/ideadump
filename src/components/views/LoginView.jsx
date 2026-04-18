@@ -1,15 +1,27 @@
 // Login-vy — Google OAuth + E-post/lösenord
 import { useState } from 'react'
 
+// iOS PWA (standalone) delar inte cookie-jar med Safari → OAuth-redirect
+// landar i Safari men session når aldrig PWA:n. Döljer Google-knappen där.
+const isStandalonePWA = typeof window !== 'undefined' && (
+  window.matchMedia?.('(display-mode: standalone)').matches ||
+  window.navigator.standalone === true
+)
+
 export default function LoginView({ onSignInGoogle, onSignInEmail, onSignUpEmail, onBack }) {
   const [mode, setMode]       = useState('login') // 'login' | 'signup'
   const [email, setEmail]     = useState('')
   const [password, setPassword] = useState('')
+  const [gdprAccepted, setGdprAccepted] = useState(false)
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (mode === 'signup' && !gdprAccepted) {
+      setError('Du måste godkänna integritetspolicyn för att skapa konto.')
+      return
+    }
     setError('')
     setLoading(true)
     try {
@@ -34,7 +46,8 @@ export default function LoginView({ onSignInGoogle, onSignInEmail, onSignUpEmail
       minHeight: '100vh',
       background: 'radial-gradient(ellipse at 30% 0%, #060618 0%, #02020e 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', padding: '24px 20px',
+      justifyContent: 'center',
+      padding: 'max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom))',
       fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
     }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
@@ -63,29 +76,56 @@ export default function LoginView({ onSignInGoogle, onSignInEmail, onSignUpEmail
           </p>
         </div>
 
-        {/* Google */}
-        <button onClick={onSignInGoogle} style={{
-          width: '100%', padding: '13px',
-          background: 'linear-gradient(135deg, #00F0FF18 0%, #F2B8B418 100%)',
-          border: '1px solid #00F0FF28', borderRadius: 12,
-          color: '#e0e0e0', fontSize: 15, fontWeight: 600,
-          cursor: 'pointer', marginBottom: 20,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-        }}>
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
-            <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-            <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
-            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.96l3.007 2.332C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-          </svg>
-          Fortsätt med Google
-        </button>
+        {/* Google — döljs i iOS PWA eftersom OAuth-redirect inte når PWA:n */}
+        {isStandalonePWA ? (
+          <div style={{
+            padding: '14px 16px',
+            background: '#F2B8B410',
+            border: '1px solid #F2B8B433',
+            borderRadius: 12,
+            marginBottom: 20,
+            fontSize: 12.5, lineHeight: 1.55, color: '#c9a29f',
+          }}>
+            <div style={{ fontWeight: 600, color: '#F2B8B4', marginBottom: 4 }}>
+              Google-inloggning funkar inte i appen
+            </div>
+            Använd e-post/lösenord nedan — eller{' '}
+            <a
+              href={typeof window !== 'undefined' ? window.location.href : '/'}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#00F0FF', textDecoration: 'underline' }}
+            >
+              öppna i Safari
+            </a>
+            {' '}för att logga in med Google.
+          </div>
+        ) : (
+          <>
+            <button onClick={onSignInGoogle} style={{
+              width: '100%', padding: '13px',
+              background: 'linear-gradient(135deg, #00F0FF18 0%, #F2B8B418 100%)',
+              border: '1px solid #00F0FF28', borderRadius: 12,
+              color: '#e0e0e0', fontSize: 15, fontWeight: 600,
+              cursor: 'pointer', marginBottom: 20,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+                <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+                <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+                <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.96l3.007 2.332C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+              </svg>
+              Fortsätt med Google
+            </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, background: '#111128' }} />
-          <span style={{ fontSize: 11, color: '#333' }}>eller</span>
-          <div style={{ flex: 1, height: 1, background: '#111128' }} />
-        </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+              <div style={{ flex: 1, height: 1, background: '#111128' }} />
+              <span style={{ fontSize: 11, color: '#333' }}>eller</span>
+              <div style={{ flex: 1, height: 1, background: '#111128' }} />
+            </div>
+          </>
+        )}
 
         {/* E-post-formulär */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -100,15 +140,41 @@ export default function LoginView({ onSignInGoogle, onSignInEmail, onSignUpEmail
             required autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
             style={input}
           />
+          {mode === 'signup' && (
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              fontSize: 12, color: '#888', lineHeight: 1.55, cursor: 'pointer',
+              padding: '4px 2px',
+            }}>
+              <input
+                type="checkbox"
+                checked={gdprAccepted}
+                onChange={e => setGdprAccepted(e.target.checked)}
+                style={{
+                  width: 18, height: 18, marginTop: 1, flexShrink: 0,
+                  accentColor: '#00F0FF', cursor: 'pointer',
+                }}
+              />
+              <span>
+                Jag godkänner{' '}
+                <a href="/integritetspolicy" target="_blank" rel="noopener noreferrer"
+                  style={{ color: '#00F0FF', textDecoration: 'underline' }}>
+                  integritetspolicyn
+                </a>
+                {' '}och att mina idéer sparas i Supabase-molnet.
+              </span>
+            </label>
+          )}
           {error && (
             <p style={{ fontSize: 12, color: '#ff6b6b', margin: 0 }}>{error}</p>
           )}
-          <button type="submit" disabled={loading} style={{
+          <button type="submit" disabled={loading || (mode === 'signup' && !gdprAccepted)} style={{
             padding: '13px', borderRadius: 12,
-            background: loading ? '#111' : '#00F0FF22',
+            background: loading || (mode === 'signup' && !gdprAccepted) ? '#111' : '#00F0FF22',
             border: '1px solid #00F0FF44',
-            color: loading ? '#444' : '#00F0FF',
-            fontSize: 14, fontWeight: 700, cursor: loading ? 'default' : 'pointer',
+            color: loading || (mode === 'signup' && !gdprAccepted) ? '#444' : '#00F0FF',
+            fontSize: 14, fontWeight: 700,
+            cursor: loading || (mode === 'signup' && !gdprAccepted) ? 'not-allowed' : 'pointer',
           }}>
             {loading ? 'Laddar...' : mode === 'login' ? 'Logga in' : 'Skapa konto'}
           </button>
