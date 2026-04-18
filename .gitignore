@@ -9,3 +9,6 @@ dist/
 .claude/
 ideas.json
 .ingest-tmp/
+
+# Claude Design-bundles (handoff-artefakter, behövs inte i repo)
+*Standalone.html

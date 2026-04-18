@@ -6,6 +6,7 @@ import PrivacyView from "./components/views/PrivacyView.jsx";
 import LoginView from "./components/views/LoginView.jsx";
 import WeeklyReviewView from "./components/views/WeeklyReviewView.jsx";
 import LandingView from "./components/views/LandingView.jsx";
+import BottomNav from "./components/ui/BottomNav.jsx";
 import { useAuth } from "./utils/useAuth.js";
 import { saveToCloud, loadFromCloud } from "./utils/cloudSync.js";
 import { loadIdeas, saveIdeas, loadApiKeys } from "./utils/storage.js";
@@ -327,10 +328,10 @@ export default function IdeaDump() {
       color: "#e0e0e0",
       fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
       maxWidth: 500, margin: "0 auto",
-      paddingBottom: 90,
+      paddingTop: "env(safe-area-inset-top, 0px)",
+      paddingBottom: "calc(90px + env(safe-area-inset-bottom, 0px))",
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
         @keyframes rec-pulse {
           0%,100% { box-shadow: 0 0 0 0 rgba(255,40,80,0.6); }
           50%      { box-shadow: 0 0 0 20px rgba(255,40,80,0); }
@@ -367,37 +368,6 @@ export default function IdeaDump() {
             Capture · Analyze · Act
           </p>
         </div>
-        {inboxCount > 0 && (
-          <div style={{
-            background: "#00F0FF18", border: "1px solid #00F0FF33",
-            borderRadius: 20, padding: "4px 12px", display: "flex", alignItems: "center", gap: 6,
-          }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#00F0FF" }} />
-            <span style={{ fontSize: 12, color: "#00F0FF", fontWeight: 600 }}>{inboxCount} inbox</span>
-          </div>
-        )}
-      </div>
-
-      {/* NAV */}
-      <div style={{
-        display: "flex", margin: "16px 20px 0", background: "#070714",
-        borderRadius: 14, padding: 4, gap: 3, border: "1px solid #111128",
-      }}>
-        {[
-          { key: "capture", label: "🎙 Capture" },
-          { key: "list",    label: `📋 Idéer${ideas.length ? ` (${ideas.length})` : ""}` },
-          { key: "weekly",  label: "📅 Vecka" },
-          { key: "settings", label: "⚙️" },
-        ].map(n => (
-          <button key={n.key} onClick={() => setView(n.key)} className="nav-btn" style={{
-            flex: n.key === "settings" ? "0 0 44px" : 1, padding: "11px 6px", minHeight: 44,
-            background: view === n.key ? "linear-gradient(135deg, #00F0FF18 0%, #F2B8B418 100%)" : "transparent",
-            border: `1px solid ${view === n.key ? "#00F0FF28" : "transparent"}`,
-            borderRadius: 10, color: view === n.key ? "#e0e0e0" : "#777",
-            fontSize: 13, fontWeight: view === n.key ? 600 : 400,
-            cursor: "pointer", transition: "all 0.2s",
-          }}>{n.label}</button>
-        ))}
       </div>
 
       {/* STATUSMEDDELANDE */}
@@ -480,6 +450,8 @@ export default function IdeaDump() {
           color: "#666", fontSize: 10, letterSpacing: 1, cursor: "pointer",
         }}>Integritetspolicy</button>
       </div>
+
+      <BottomNav view={view} onNav={setView} inboxCount={inboxCount} />
     </div>
   );
 }
