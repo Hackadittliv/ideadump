@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { exportToCSV } from "../../utils/export.js";
 import { loadUserConfig, saveUserConfig, DEFAULT_BRANDS, DEFAULT_GOALS } from "../../utils/userConfig.js";
 import { pushSupported, getPushStatus, subscribePush, unsubscribePush, sendTestPush } from "../../utils/push.js";
-import { googleOAuthConfigured, openGoogleOAuthPopup } from "../../utils/googleCalendar.js";
+import { googleOAuthConfigured, openGoogleOAuthPopup, isGoogleCalendarConnected, disconnectGoogleCalendar } from "../../utils/googleCalendar.js";
 
 export default function SettingsView({ ideas, onClearIdeas, flash, user, onSignOut }) {
   const initial = loadUserConfig();
@@ -12,13 +12,35 @@ export default function SettingsView({ ideas, onClearIdeas, flash, user, onSignO
   const [pushState, setPushState] = useState("idle");
   const [pushWorking, setPushWorking] = useState(false);
   const [googleWorking, setGoogleWorking] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setGoogleConnected(false); return; }
+    isGoogleCalendarConnected(user.id).then(setGoogleConnected);
+  }, [user]);
 
   const handleGoogleConnect = async () => {
     if (!user) { flash("Logga in först."); return; }
     setGoogleWorking(true);
     try {
       await openGoogleOAuthPopup(user.id);
+      setGoogleConnected(true);
       flash("✨ Google Calendar kopplat!");
+    } catch (e) {
+      flash("Fel: " + e.message);
+    } finally {
+      setGoogleWorking(false);
+    }
+  };
+
+  const handleGoogleDisconnect = async () => {
+    if (!user) return;
+    if (!confirm("Koppla bort Google Calendar?")) return;
+    setGoogleWorking(true);
+    try {
+      await disconnectGoogleCalendar(user.id);
+      setGoogleConnected(false);
+      flash("Google Calendar bortkopplad.");
     } catch (e) {
       flash("Fel: " + e.message);
     } finally {
@@ -151,14 +173,30 @@ export default function SettingsView({ ideas, onClearIdeas, flash, user, onSignO
           <p style={{ margin: "0 0 12px", fontSize: 11, color: "#888", lineHeight: 1.7 }}>
             Boka idéer direkt i din Google Calendar istället för att ladda ner .ics-filer.
           </p>
-          <button onClick={handleGoogleConnect} disabled={googleWorking} style={{
-            width: "100%", padding: "12px",
-            background: "linear-gradient(135deg, #4285f428 0%, #34a85328 100%)",
-            border: "1px solid #4285f444", borderRadius: 10,
-            color: "#6ba5f7", fontSize: 13, fontWeight: 600, cursor: "pointer",
-          }}>
-            {googleWorking ? "⏳ Öppnar Google..." : "🔗 Koppla Google Calendar"}
-          </button>
+          {googleConnected ? (
+            <div style={{ display: "flex", gap: 8 }}>
+              <div style={{
+                flex: 1, padding: "12px",
+                background: "#34a85318", border: "1px solid #34a85344", borderRadius: 10,
+                color: "#7dd38f", fontSize: 13, fontWeight: 600,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              }}>✅ Kopplad</div>
+              <button onClick={handleGoogleDisconnect} disabled={googleWorking} style={{
+                padding: "12px 16px",
+                background: "transparent", border: "1px solid #3a1a1a", borderRadius: 10,
+                color: "#aa4444", fontSize: 12, fontWeight: 600, cursor: googleWorking ? "default" : "pointer",
+              }}>Koppla bort</button>
+            </div>
+          ) : (
+            <button onClick={handleGoogleConnect} disabled={googleWorking} style={{
+              width: "100%", padding: "12px",
+              background: "linear-gradient(135deg, #4285f428 0%, #34a85328 100%)",
+              border: "1px solid #4285f444", borderRadius: 10,
+              color: "#6ba5f7", fontSize: 13, fontWeight: 600, cursor: "pointer",
+            }}>
+              {googleWorking ? "⏳ Öppnar Google..." : "🔗 Koppla Google Calendar"}
+            </button>
+          )}
         </div>
       )}
 

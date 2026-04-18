@@ -109,6 +109,28 @@ export function openGoogleOAuthPopup(userId) {
   });
 }
 
+export async function isGoogleCalendarConnected(userId) {
+  // Importeras dynamiskt för att undvika cirkulärt beroende.
+  const { supabase } = await import("../supabase.js");
+  const { data, error } = await supabase
+    .from("ideadump_google_tokens")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) return false;
+  return !!data;
+}
+
+export async function disconnectGoogleCalendar(userId) {
+  const { supabase } = await import("../supabase.js");
+  const { error } = await supabase
+    .from("ideadump_google_tokens")
+    .delete()
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return true;
+}
+
 export async function createCalendarEvent(userId, idea, scheduledDate) {
   const res = await fetch("/.netlify/functions/google-calendar-create", {
     method: "POST",
