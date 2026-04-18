@@ -38,17 +38,24 @@ export function openGoogleOAuthPopup(userId) {
       "width=500,height=650",
     );
 
-    const handler = async (event) => {
-      if (event.origin !== window.location.origin) return;
-      if (event.data?.type !== "google-oauth-code") return;
+    let settled = false;
+    const channel = "BroadcastChannel" in window ? new BroadcastChannel("google-oauth") : null;
 
-      const { code, state: returnedState, error } = event.data;
-      window.removeEventListener("message", handler);
+    const cleanup = () => {
+      settled = true;
+      clearInterval(timer);
+      window.removeEventListener("message", handleMessage);
+      window.removeEventListener("storage", handleStorage);
+      channel?.close();
       popup?.close();
+    };
 
-      if (error) { reject(new Error(error)); return; }
-      if (returnedState !== state) { reject(new Error("State mismatch")); return; }
-
+    const processPayload = async (payload) => {
+      if (settled) return;
+      const { code, state: returnedState, error } = payload;
+      if (error) { cleanup(); reject(new Error(error)); return; }
+      if (returnedState !== state) { cleanup(); reject(new Error("State mismatch")); return; }
+      cleanup();
       try {
         const res = await fetch("/.netlify/functions/google-oauth-callback", {
           method: "POST",
@@ -63,13 +70,39 @@ export function openGoogleOAuthPopup(userId) {
       }
     };
 
-    window.addEventListener("message", handler);
+    // 1. BroadcastChannel — robust, fungerar även om COOP kapar window.opener
+    if (channel) {
+      channel.onmessage = (e) => {
+        if (e.data?.type === "google-oauth-code") processPayload(e.data);
+      };
+    }
 
-    // Fallback: om popupen stängs innan callback
+    // 2. localStorage-event — fallback om BroadcastChannel inte stöds
+    const handleStorage = (e) => {
+      if (e.key !== "google_oauth_result" || !e.newValue) return;
+      try {
+        const payload = JSON.parse(e.newValue);
+        if (payload?.type === "google-oauth-code") {
+          localStorage.removeItem("google_oauth_result");
+          processPayload(payload);
+        }
+      } catch {}
+    };
+    window.addEventListener("storage", handleStorage);
+
+    // 3. postMessage — sista fallback (funkar när opener inte är severed)
+    const handleMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== "google-oauth-code") return;
+      processPayload(event.data);
+    };
+    window.addEventListener("message", handleMessage);
+
+    // Popup-stängningsfallback — om inget kommit in när popupen stängs
     const timer = setInterval(() => {
+      if (settled) return;
       if (popup?.closed) {
-        clearInterval(timer);
-        window.removeEventListener("message", handler);
+        cleanup();
         reject(new Error("Popup stängdes innan auth klar."));
       }
     }, 500);

@@ -16,21 +16,35 @@
     <p>Du kan stänga detta fönster nu.</p>
   </div>
   <script>
-    // Skicka auth-koden tillbaka till huvudfönstret via postMessage
+    // Skicka auth-koden tillbaka till huvudfönstret.
+    // Google's consent-sida sätter COOP-headers som kan kapa window.opener,
+    // så vi försöker BroadcastChannel först (fungerar över COOP), sedan
+    // localStorage-event, och postMessage som sista fallback.
     const url = new URL(window.location.href);
-    const code = url.searchParams.get("code");
-    const state = url.searchParams.get("state");
-    const error = url.searchParams.get("error");
+    const payload = {
+      type: "google-oauth-code",
+      code: url.searchParams.get("code"),
+      state: url.searchParams.get("state"),
+      error: url.searchParams.get("error"),
+    };
 
-    if (window.opener) {
-      window.opener.postMessage({
-        type: "google-oauth-code",
-        code, state, error,
-      }, window.location.origin);
-      setTimeout(() => window.close(), 500);
-    } else {
-      document.querySelector("p").textContent = "Hittade inget huvudfönster — stäng och försök igen.";
-    }
+    try {
+      const ch = new BroadcastChannel("google-oauth");
+      ch.postMessage(payload);
+      ch.close();
+    } catch {}
+
+    try {
+      localStorage.setItem("google_oauth_result", JSON.stringify({ ...payload, ts: Date.now() }));
+    } catch {}
+
+    try {
+      if (window.opener) {
+        window.opener.postMessage(payload, window.location.origin);
+      }
+    } catch {}
+
+    setTimeout(() => window.close(), 500);
   </script>
 </body>
 </html>
