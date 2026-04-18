@@ -276,9 +276,12 @@ export default function IdeaDump() {
 
   // Visa login-modal eller landningssida om ej inloggad
   // Om autorecord=true i URL (t.ex. från Siri-genväg) → visa login direkt
-  const autoRecordParam = new URLSearchParams(window.location.search).get("autorecord") === "true";
+  // Om login=1 i URL (t.ex. från "öppna i Safari"-länken) → visa login direkt
+  const urlParams = new URLSearchParams(window.location.search);
+  const autoRecordParam = urlParams.get("autorecord") === "true";
+  const loginParam = urlParams.get("login") === "1";
   if (!user) {
-    if (showLogin || autoRecordParam) return (
+    if (showLogin || autoRecordParam || loginParam) return (
       <LoginView
         onSignInGoogle={signInWithGoogle}
         onSignInEmail={signInWithEmail}

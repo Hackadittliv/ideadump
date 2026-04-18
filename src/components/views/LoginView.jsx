@@ -91,7 +91,7 @@ export default function LoginView({ onSignInGoogle, onSignInEmail, onSignUpEmail
             </div>
             Använd e-post/lösenord nedan — eller{' '}
             <a
-              href={typeof window !== 'undefined' ? window.location.href : '/'}
+              href={typeof window !== 'undefined' ? `${window.location.origin}/?login=1` : '/?login=1'}
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: '#00F0FF', textDecoration: 'underline' }}
