@@ -109,25 +109,30 @@ export function openGoogleOAuthPopup(userId) {
   });
 }
 
+// Läs/skriv går via Netlify Function eftersom RLS blockerar frontend.
 export async function isGoogleCalendarConnected(userId) {
-  // Importeras dynamiskt för att undvika cirkulärt beroende.
-  const { supabase } = await import("../supabase.js");
-  const { data, error } = await supabase
-    .from("ideadump_google_tokens")
-    .select("user_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) return false;
-  return !!data;
+  try {
+    const res = await fetch("/.netlify/functions/google-calendar-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return !!data.connected;
+  } catch {
+    return false;
+  }
 }
 
 export async function disconnectGoogleCalendar(userId) {
-  const { supabase } = await import("../supabase.js");
-  const { error } = await supabase
-    .from("ideadump_google_tokens")
-    .delete()
-    .eq("user_id", userId);
-  if (error) throw new Error(error.message);
+  const res = await fetch("/.netlify/functions/google-calendar-status", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, action: "disconnect" }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return true;
 }
 
