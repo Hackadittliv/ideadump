@@ -7,6 +7,8 @@ import { useEffect, useState, useMemo } from "react";
 import { listReflections, pruneStaleReflections } from "../../utils/reflections.js";
 import { listOutcomes, OUTCOMES, OUTCOME_LABEL } from "../../utils/outcomes.js";
 import { listSkills } from "../../utils/skills.js";
+import { loadIdeas } from "../../utils/storage.js";
+import { hasActionableRevenue, REVENUE_STATUSES } from "../../utils/revenueActions.js";
 
 const POSITIVE_OUTCOMES = new Set(["shipped", "sold", "still_working"]);
 const NEGATIVE_OUTCOMES = new Set(["killed", "stalled"]);
@@ -34,6 +36,27 @@ export default function RubricsPanel() {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
+
+  // Revenue-stats baseras på lokala idéer (cloud-synkade) — vi behöver inte
+  // ringa servern för att räkna fields som redan ligger i state.
+  const ideas = loadIdeas();
+  const revenueStats = useMemo(() => {
+    const withAction = ideas.filter(hasActionableRevenue);
+    const done = withAction.filter(i => i.revenueActionStatus === REVENUE_STATUSES.DONE);
+    const abandoned = withAction.filter(i => i.revenueActionStatus === REVENUE_STATUSES.ABANDONED);
+    const planned = withAction.filter(i => !i.revenueActionStatus || i.revenueActionStatus === REVENUE_STATUSES.PLANNED);
+    const decided = done.length + abandoned.length;
+    const sek = done.reduce((sum, i) => sum + (Number(i.revenueOutcome?.revenueSek) || 0), 0);
+    const conversionRate = decided > 0 ? Math.round((done.length / decided) * 100) : 0;
+    return {
+      total: withAction.length,
+      done: done.length,
+      abandoned: abandoned.length,
+      planned: planned.length,
+      sek,
+      conversionRate,
+    };
+  }, [ideas]);
 
   const stats = useMemo(() => {
     // Accept-rate: AI-genererade som blivit active/pinned vs total avgjorda
@@ -110,6 +133,30 @@ export default function RubricsPanel() {
       <p style={{ margin: "0 0 16px", fontSize: 12, color: "#888", lineHeight: 1.6 }}>
         Mätning av om agenten faktiskt blir bättre. Mer data = mer pålitliga siffror.
       </p>
+
+      <Section title="💰 Revenue Action Loop" subtitle={`${revenueStats.total} idéer med revenue-handling · ${revenueStats.planned} väntar`}>
+        {revenueStats.total === 0 ? (
+          <Empty text="Inga revenue-handlingar än. Nya analyser får automatiskt en konkret marknadshandling att utföra." />
+        ) : (
+          <>
+            <Stat
+              label="💵 Realiserad SEK"
+              value={revenueStats.sek > 0 ? `${revenueStats.sek.toLocaleString("sv-SE")} kr` : "—"}
+              hint={revenueStats.done > 0
+                ? `Från ${revenueStats.done} genomförd${revenueStats.done === 1 ? "" : "a"} handling${revenueStats.done === 1 ? "" : "ar"}`
+                : "Markera 'Gjorde det' med SEK på en idé"}
+            />
+            <Stat
+              label="🎯 Konverterings-rate"
+              value={revenueStats.done + revenueStats.abandoned > 0 ? `${revenueStats.conversionRate}%` : "—"}
+              hint={`${revenueStats.done} gjord / ${revenueStats.done + revenueStats.abandoned} avgjord`}
+            />
+            {revenueStats.planned >= 5 && (
+              <Hint>⚠️ {revenueStats.planned} revenue-handlingar väntar på utförande. Det är decision pressure att agera eller avbryta.</Hint>
+            )}
+          </>
+        )}
+      </Section>
 
       <Section title="🧠 AI-genererade lärdomar" subtitle={`${ai.aiGenerated} totalt · ${ai.aiPending} väntar på beslut`}>
         {ai.decided === 0 ? (

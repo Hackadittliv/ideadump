@@ -3,6 +3,7 @@ import ScoreRing from "./ui/ScoreRing.jsx";
 import Slider from "./ui/Slider.jsx";
 import ProsCons from "./ui/ProsCons.jsx";
 import OutcomePicker from "./ui/OutcomePicker.jsx";
+import RevenueActionPanel from "./ui/RevenueActionPanel.jsx";
 import { suggestReflectionFromIdea } from "../utils/reflections.js";
 import { STATUSES, getBrands, getBrandColorsMap } from "../styles/theme.js";
 import { iceTotal } from "../utils/iceCalc.js";
@@ -226,6 +227,11 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
       {/* Expanderat innehåll */}
       {expanded && (
         <div style={{ marginTop: 18, borderTop: "1px solid #181830", paddingTop: 18 }}>
+
+          {/* Revenue Action Loop — den konkreta marknadshandlingen som idén
+              MÅSTE förvandlas till. Står överst för att vara det första
+              ögat ser; tvingar val mellan utförd, avbruten, eller kvar. */}
+          <RevenueActionPanel idea={idea} onUpdate={onUpdate} />
 
           {/* Outcome — ground truth för att korrelera AI-förutsägelser mot
               verkligheten. Visas inte för inbox (för tidigt att fråga). */}

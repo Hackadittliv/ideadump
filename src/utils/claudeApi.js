@@ -17,6 +17,7 @@ const FALLBACK = {
   suggestedBrand: "Övrigt", tags: [], pros: [], cons: [],
   biggestRisk: "", energyWarning: "neutral",
   coachComment: "", nextActionSuggestion: "", whyThisMatters: "",
+  revenueAction: { type: "no_action", description: "", estimatedRevenue: "okänd", timeBox: "", reasoning: "" },
 };
 
 export async function analyzeIdea(transcript) {

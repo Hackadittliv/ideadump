@@ -84,7 +84,20 @@ COACHING-STIL:
 - Referera till varumärken vid namn när relevant
 - Håll coachComment kort: max 2 meningar, inga floskler
 
-${reflectionsBlock}
+REVENUE ACTION (KRITISKT):
+Varje idé MÅSTE få en konkret revenue-handling — det enda sättet idéer leder
+till skuldfrihet är att de förvandlas till något marknaden faktiskt betalar för.
+Välj typen som mest sannolikt skapar marknadskontakt eller lärande:
+- sales_call: ringa specifik person/kund med erbjudande
+- landing_page: bygg/uppdatera sida som testar erbjudandet
+- outreach: DM/mail till ≤5 specifika personer
+- price_test: testa pris på existerande erbjudande
+- customer_ask: fråga befintlig betalande kund om behov/utvidgning
+- partner_ping: ta kontakt med samarbetspartner som kan distribuera
+- no_action: ENDAST när idén verkligen är intern (system, hobby, research utan revenue-bäring)
+
+Default mot HANDLING. "no_action" är reservalternativ, inte default.
+Beskrivningen ska vara ETT konkret steg som tar ≤2 timmar.
 
 ${skillsBlock}
 
@@ -125,10 +138,19 @@ Returnera exakt detta JSON:
   "energyWarning": "genuine",
   "coachComment": "Rak, ärlig, inspirerande feedback kopplad till den specifika situationen. Max 2 meningar.",
   "nextActionSuggestion": "Konkret nästa steg inom 48h",
-  "whyThisMatters": "En mening om varför detta spelar roll för missionen"
+  "whyThisMatters": "En mening om varför detta spelar roll för missionen",
+  "revenueAction": {
+    "type": "outreach",
+    "description": "Konkret marknadshandling ≤2h, t.ex. 'Skicka DM till 3 specifika personer i målgruppen X med fråga Y'",
+    "estimatedRevenue": "låg",
+    "timeBox": "30 min",
+    "reasoning": "En mening om varför just denna handling testar idén bäst"
+  }
 }
 suggestedBrand måste vara exakt ett av varumärkena ovan.
-energyWarning: "genuine", "distraction", eller "neutral".`,
+energyWarning: "genuine", "distraction", eller "neutral".
+revenueAction.type måste vara: sales_call, landing_page, outreach, price_test, customer_ask, partner_ping, eller no_action.
+revenueAction.estimatedRevenue: "låg" | "medel" | "hög" | "okänd".`,
       }],
     }),
   });
