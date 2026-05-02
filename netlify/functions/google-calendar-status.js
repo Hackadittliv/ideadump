@@ -1,6 +1,7 @@
 // Kollar om användaren har kopplat Google Calendar.
 // Servern har service-role key som bypassar RLS; frontend har inte.
 const { createClient } = require("@supabase/supabase-js");
+const { requireUser } = require("./_auth");
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co";
 
@@ -14,15 +15,16 @@ exports.handler = async (event) => {
     return { statusCode: 503, body: JSON.stringify({ error: "SUPABASE_SERVICE_ROLE_KEY saknas." }) };
   }
 
-  let userId, action;
+  let bodyUserId, action;
   try {
-    ({ userId, action } = JSON.parse(event.body));
+    ({ userId: bodyUserId, action } = JSON.parse(event.body));
   } catch {
     return { statusCode: 400, body: JSON.stringify({ error: "Ogiltig body." }) };
   }
-  if (!userId) {
-    return { statusCode: 400, body: JSON.stringify({ error: "userId krävs." }) };
-  }
+
+  const auth = await requireUser(event, bodyUserId);
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
   const supabase = createClient(SUPABASE_URL, serviceKey);
 

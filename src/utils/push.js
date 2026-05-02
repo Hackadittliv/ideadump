@@ -1,4 +1,5 @@
 // Push notification helpers — prenumerera, avregistrera, kolla status
+import { authedFetch } from "./authedFetch.js";
 
 const VAPID_PUBLIC = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
@@ -45,9 +46,8 @@ export async function subscribePush(userId) {
     });
   }
 
-  const res = await fetch("/.netlify/functions/push-subscribe", {
+  const res = await authedFetch("/.netlify/functions/push-subscribe", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       userId,
       subscription: sub.toJSON(),
@@ -69,9 +69,8 @@ export async function unsubscribePush() {
 }
 
 export async function sendTestPush(userId) {
-  const res = await fetch("/.netlify/functions/push-send", {
+  const res = await authedFetch("/.netlify/functions/push-send", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       userId,
       title: "🎉 Push fungerar!",

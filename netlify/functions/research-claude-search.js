@@ -7,11 +7,15 @@
 // Obs: tool-typen 'web_search_20250305' lanserades av Anthropic — om den
 // inte är tillgänglig på din plan, returnerar Anthropic ett 400-fel och
 // du måste antingen aktivera tool-access eller ta bort denna provider.
+const { requireUser } = require("./_auth");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
   }
+
+  const auth = await requireUser(event);
+  if (auth.error) return auth.error;
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {

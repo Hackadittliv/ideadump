@@ -1,5 +1,6 @@
 // Beta-anmälan — sparar i Supabase + skickar bekräftelsemail via Resend
 const { createClient } = require("@supabase/supabase-js");
+const { escapeHtml } = require("./_html");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -69,7 +70,7 @@ exports.handler = async (event) => {
               Du är med på listan!
             </h1>
             <p style="color: #888; font-size: 15px; line-height: 1.7; margin: 16px 0;">
-              ${name ? `Hej ${name}! ` : "Hej! "}Tack för att du anmält dig till IdeaDump beta.
+              ${name ? `Hej ${escapeHtml(name)}! ` : "Hej! "}Tack för att du anmält dig till IdeaDump beta.
             </p>
             <p style="color: #888; font-size: 15px; line-height: 1.7; margin: 0 0 16px;">
               Vi jobbar på att ge dig tillgång så snart som möjligt. Du hör av dig från oss när din plats är redo — håll utkik i inkorgen.

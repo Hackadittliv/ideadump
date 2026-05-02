@@ -1,6 +1,7 @@
 // Söndagsgenomgång — veckoanalys med Claude + kalenderbokning
 import { useState } from "react";
 import { exportToCalendar } from "../../utils/icsExport.js";
+import { authedFetch } from "../../utils/authedFetch.js";
 import { getBrandColorsMap } from "../../styles/theme.js";
 
 export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
@@ -30,9 +31,8 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
     setError("");
     setReview(null);
     try {
-      const res = await fetch("/.netlify/functions/weekly-review", {
+      const res = await authedFetch("/.netlify/functions/weekly-review", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ideas: activeIdeas }),
       });
       const data = await res.json();

@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase.js'
+import { authedFetch } from './authedFetch.js'
 
-async function checkBetaApproved(email) {
-  const { data } = await supabase
-    .from('ideadump_beta_signups')
-    .select('approved')
-    .eq('email', email.toLowerCase())
-    .single()
+async function checkBetaApproved() {
+  const res = await authedFetch('/.netlify/functions/check-beta-approved', { method: 'POST' })
+  if (!res.ok) return false
+  const data = await res.json().catch(() => ({}))
   return data?.approved === true
 }
 
@@ -18,16 +17,22 @@ export function useAuth() {
   useEffect(() => {
     // VIKTIGT: Inte await:a andra Supabase-anrop inuti onAuthStateChange
     // — det deadlockar auth-SDK:n. Beta-kollen körs fire-and-forget.
+    let activeUserId = null
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null
+      activeUserId = u?.id ?? null
+      const checkUserId = activeUserId
       setUser(u)
       setLoading(false)
       if (u) {
-        checkBetaApproved(u.email)
-          .then(approved => setBetaApproved(approved))
+        checkBetaApproved()
+          .then(approved => {
+            // Skydd mot stale promise om sessionen bytts under hämtningen
+            if (activeUserId === checkUserId) setBetaApproved(approved)
+          })
           .catch(err => {
             console.error('[Auth] checkBetaApproved error:', err)
-            setBetaApproved(false)
+            if (activeUserId === checkUserId) setBetaApproved(false)
           })
       } else {
         setBetaApproved(false)

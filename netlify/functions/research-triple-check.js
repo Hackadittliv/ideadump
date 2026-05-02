@@ -14,12 +14,13 @@
 // }
 
 const { CHRISTIAN_CONTEXT } = require("./_research-prompt.js");
+const { requireUser } = require("./_auth");
 
-async function callFunction(name, body, baseUrl) {
+async function callFunction(name, body, baseUrl, authHeader) {
   try {
     const res = await fetch(`${baseUrl}/.netlify/functions/${name}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: authHeader },
       body: JSON.stringify(body),
     });
     const data = await res.json();
@@ -35,6 +36,9 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: "Method not allowed" };
   }
 
+  const auth = await requireUser(event);
+  if (auth.error) return auth.error;
+
   let query, ideaContext;
   try {
     ({ query, ideaContext = "" } = JSON.parse(event.body));
@@ -47,12 +51,13 @@ exports.handler = async (event) => {
 
   // baseUrl för intern function-to-function-anrop. Netlify exponerar URL via env.
   const baseUrl = process.env.URL || process.env.DEPLOY_URL || `https://${event.headers.host}`;
+  const authHeader = event.headers?.authorization || event.headers?.Authorization || "";
 
   // Fan out parallellt
   const [exa, ppx, cls] = await Promise.all([
-    callFunction("research-exa", { query, numResults: 6, mode: "search" }, baseUrl),
-    callFunction("research-perplexity", { query }, baseUrl),
-    callFunction("research-claude-search", { query }, baseUrl),
+    callFunction("research-exa", { query, numResults: 6, mode: "search" }, baseUrl, authHeader),
+    callFunction("research-perplexity", { query }, baseUrl, authHeader),
+    callFunction("research-claude-search", { query }, baseUrl, authHeader),
   ]);
 
   // Samla källor från alla providers

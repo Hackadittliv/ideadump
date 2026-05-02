@@ -3,11 +3,15 @@
 //
 // Body: { query: string, numResults?: number, mode?: "search" | "similar" }
 // Response: { provider:"exa", results: [{title,url,snippet,publishedDate,similarity}], rawCount }
+const { requireUser } = require("./_auth");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
   }
+
+  const auth = await requireUser(event);
+  if (auth.error) return auth.error;
 
   const apiKey = process.env.EXA_API_KEY;
   if (!apiKey) {

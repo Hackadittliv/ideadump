@@ -1,10 +1,14 @@
 // Notion-sync — tar en idé och skapar/uppdaterar en rad i Christians Notion-databas.
 // Kräver env vars: NOTION_API_KEY, NOTION_DATABASE_ID
+const { requireUser } = require("./_auth");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
   }
+
+  const auth = await requireUser(event);
+  if (auth.error) return auth.error;
 
   const notionKey = process.env.NOTION_API_KEY;
   const dbId = process.env.NOTION_DATABASE_ID;

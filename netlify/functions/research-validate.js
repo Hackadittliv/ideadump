@@ -15,11 +15,12 @@
 // }
 
 const { CHRISTIAN_CONTEXT } = require("./_research-prompt.js");
+const { requireUser } = require("./_auth");
 
-async function callExa(query, baseUrl) {
+async function callExa(query, baseUrl, authHeader) {
   const res = await fetch(`${baseUrl}/.netlify/functions/research-exa`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: authHeader },
     body: JSON.stringify({ query, numResults: 8, mode: "search" }),
   });
   const data = await res.json();
@@ -31,6 +32,9 @@ exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
   }
+
+  const auth = await requireUser(event);
+  if (auth.error) return auth.error;
 
   let query, ideaContext;
   try {
@@ -51,10 +55,11 @@ exports.handler = async (event) => {
   }
 
   const baseUrl = process.env.URL || process.env.DEPLOY_URL || `https://${event.headers.host}`;
+  const authHeader = event.headers?.authorization || event.headers?.Authorization || "";
 
   let exaData;
   try {
-    exaData = await callExa(query, baseUrl);
+    exaData = await callExa(query, baseUrl, authHeader);
   } catch (e) {
     return {
       statusCode: 502,

@@ -2,6 +2,7 @@
 //
 // Smart routing default: validateIdea() kör Exa+Claude (snabbt, billigt).
 // För djupare research: tripleCheckIdea() fan-outar till alla tre providers.
+import { authedFetch } from "../authedFetch.js";
 
 /**
  * Bygg en koncis sökfras från en idé.
@@ -15,9 +16,8 @@ export function ideaToQuery(idea) {
 }
 
 async function postJson(path, body) {
-  const res = await fetch(path, {
+  const res = await authedFetch(path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));

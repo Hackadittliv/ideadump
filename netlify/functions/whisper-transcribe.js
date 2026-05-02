@@ -1,9 +1,14 @@
 // Proxy för OpenAI Whisper API — håller API-nyckeln server-side
 // Klienten skickar ljudet som base64-kodad JSON
+const { requireUser } = require("./_auth");
+
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
   }
+
+  const auth = await requireUser(event);
+  if (auth.error) return auth.error;
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {

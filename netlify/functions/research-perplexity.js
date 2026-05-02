@@ -3,11 +3,15 @@
 //
 // Body: { query: string, model?: string }
 // Response: { provider:"perplexity", answer: string, citations: [{title,url}] }
+const { requireUser } = require("./_auth");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
   }
+
+  const auth = await requireUser(event);
+  if (auth.error) return auth.error;
 
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) {

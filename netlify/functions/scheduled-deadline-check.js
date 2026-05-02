@@ -5,7 +5,16 @@ const webpush = require("web-push");
 const OWNER_USER_ID = process.env.IDEADUMP_OWNER_USER_ID;
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co";
 
-exports.handler = async () => {
+exports.handler = async (event = {}) => {
+  // Netlify scheduler invokar utan httpMethod. Publika HTTP-anrop måste ha CRON_SECRET.
+  if (event.httpMethod) {
+    const cronSecret = process.env.CRON_SECRET;
+    const headerSecret = event.headers?.["x-cron-secret"] || event.headers?.["X-Cron-Secret"] || "";
+    if (!cronSecret || headerSecret !== cronSecret) {
+      return { statusCode: 401, body: "Unauthorized" };
+    }
+  }
+
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const vapidPub = process.env.VAPID_PUBLIC_KEY;
   const vapidPriv = process.env.VAPID_PRIVATE_KEY;

@@ -1,8 +1,13 @@
 // Veckoanalys — Claude sammanfattar Inbox + Next Action och pekar ut veckans prioriteringar
+const { requireUser } = require("./_auth");
+
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
   }
+
+  const auth = await requireUser(event);
+  if (auth.error) return auth.error;
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {

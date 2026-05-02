@@ -1,4 +1,5 @@
 import { loadUserConfig } from "./userConfig.js";
+import { authedFetch } from "./authedFetch.js";
 
 // Extraherar JSON ur Claude-svar, även om det innehåller markdown-wrappers
 function extractJson(raw) {
@@ -20,9 +21,8 @@ const FALLBACK = {
 
 export async function analyzeIdea(transcript) {
   const userConfig = loadUserConfig();
-  const res = await fetch("/.netlify/functions/claude-analyze", {
+  const res = await authedFetch("/.netlify/functions/claude-analyze", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       transcript,
       userConfig: {

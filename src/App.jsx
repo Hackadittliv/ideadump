@@ -11,6 +11,7 @@ import { useAuth } from "./utils/useAuth.js";
 import { saveToCloud, loadFromCloud } from "./utils/cloudSync.js";
 import { loadIdeas, saveIdeas, loadApiKeys } from "./utils/storage.js";
 import { analyzeIdea } from "./utils/claudeApi.js";
+import { authedFetch } from "./utils/authedFetch.js";
 
 export default function IdeaDump() {
   const { user, loading: authLoading, betaApproved, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut } = useAuth();
@@ -72,25 +73,39 @@ export default function IdeaDump() {
             // Migrera localStorage-idéer till cloud vid första inloggning
             const local = loadIdeas();
             setIdeas(local);
-            if (local.length > 0) saveToCloud(user.id, local).catch(() => {});
+            if (local.length > 0) {
+              saveToCloud(user.id, local).catch(err => {
+                console.error("[CloudSync] migration save failed:", err);
+                flash("Kunde inte synka idéer till molnet. De finns lokalt — försök igen senare.");
+              });
+            }
           }
         })
-        .catch(() => setIdeas(loadIdeas()));
+        .catch(err => {
+          console.error("[CloudSync] load failed:", err);
+          flash("Kunde inte hämta idéer från molnet. Visar lokal kopia — undvik att redigera tills sync funkar igen.", 6000);
+          setIdeas(loadIdeas());
+        });
     } else {
       setIdeas(loadIdeas());
     }
   }, [user, authLoading]);
 
-  const persistIdeas = useCallback((arr) => {
-    setIdeas(arr);
-    saveIdeas(arr); // alltid spara lokalt
-    if (user) saveToCloud(user.id, arr).catch(() => {}); // synka till cloud om inloggad
-  }, [user]);
-
   const flash = useCallback((msg, ms = 3000) => {
     setStatusMsg(msg);
     if (ms < 99999) setTimeout(() => setStatusMsg(""), ms);
   }, []);
+
+  const persistIdeas = useCallback((arr) => {
+    setIdeas(arr);
+    saveIdeas(arr); // alltid spara lokalt
+    if (user) {
+      saveToCloud(user.id, arr).catch(err => {
+        console.error("[CloudSync] save failed:", err);
+        flash("⚠️ Sparat lokalt men synk till molnet misslyckades. Logga in igen om felet fortsätter.", 5000);
+      });
+    }
+  }, [user, flash]);
 
   // ── Browser Speech API ──
   const startBrowserSpeech = () => {
@@ -167,9 +182,8 @@ export default function IdeaDump() {
       // Konvertera blob till base64 för att skicka via Netlify Function
       const arrayBuffer = await blob.arrayBuffer();
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-      const res = await fetch("/.netlify/functions/whisper-transcribe", {
+      const res = await authedFetch("/.netlify/functions/whisper-transcribe", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ audio: base64, mimeType: blob.type }),
       });
       const data = await res.json();
@@ -193,9 +207,8 @@ export default function IdeaDump() {
   const handleImageAnalyze = useCallback(async ({ base64, mediaType, note }) => {
     flash("Claude läser bilden...", 99999);
     try {
-      const res = await fetch("/.netlify/functions/claude-vision", {
+      const res = await authedFetch("/.netlify/functions/claude-vision", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageBase64: base64, mediaType, note: note?.trim() || "" }),
       });
       const data = await res.json();

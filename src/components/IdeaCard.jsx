@@ -7,6 +7,7 @@ import { iceTotal } from "../utils/iceCalc.js";
 import { exportToCalendar } from "../utils/icsExport.js";
 import { validateIdea, tripleCheckIdea, recLabel } from "../utils/research/index.js";
 import { googleOAuthConfigured, createCalendarEvent } from "../utils/googleCalendar.js";
+import { authedFetch } from "../utils/authedFetch.js";
 
 export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle, onTagClick, allIdeas = [], user }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -47,9 +48,8 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
     setNotionStatus("syncing");
     setNotionMsg("");
     try {
-      const res = await fetch("/.netlify/functions/notion-sync", {
+      const res = await authedFetch("/.netlify/functions/notion-sync", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idea }),
       });
       const data = await res.json();

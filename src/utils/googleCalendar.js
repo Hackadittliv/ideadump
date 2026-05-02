@@ -1,6 +1,8 @@
 // Google Calendar OAuth + event-skapande via Netlify Functions.
 // Använder auth code flow i popup. Klientnyckel (VITE_GOOGLE_CLIENT_ID) är publik.
 
+import { authedFetch } from "./authedFetch.js";
+
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const SCOPE = "https://www.googleapis.com/auth/calendar.events";
 
@@ -57,9 +59,8 @@ export function openGoogleOAuthPopup(userId) {
       if (returnedState !== state) { cleanup(); reject(new Error("State mismatch")); return; }
       cleanup();
       try {
-        const res = await fetch("/.netlify/functions/google-oauth-callback", {
+        const res = await authedFetch("/.netlify/functions/google-oauth-callback", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code, redirectUri: getRedirectUri(), userId }),
         });
         const data = await res.json();
@@ -112,9 +113,8 @@ export function openGoogleOAuthPopup(userId) {
 // Läs/skriv går via Netlify Function eftersom RLS blockerar frontend.
 export async function isGoogleCalendarConnected(userId) {
   try {
-    const res = await fetch("/.netlify/functions/google-calendar-status", {
+    const res = await authedFetch("/.netlify/functions/google-calendar-status", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId }),
     });
     if (!res.ok) return false;
@@ -126,9 +126,8 @@ export async function isGoogleCalendarConnected(userId) {
 }
 
 export async function disconnectGoogleCalendar(userId) {
-  const res = await fetch("/.netlify/functions/google-calendar-status", {
+  const res = await authedFetch("/.netlify/functions/google-calendar-status", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, action: "disconnect" }),
   });
   const data = await res.json();
@@ -137,9 +136,8 @@ export async function disconnectGoogleCalendar(userId) {
 }
 
 export async function createCalendarEvent(userId, idea, scheduledDate) {
-  const res = await fetch("/.netlify/functions/google-calendar-create", {
+  const res = await authedFetch("/.netlify/functions/google-calendar-create", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, idea, scheduledDate }),
   });
   const data = await res.json();

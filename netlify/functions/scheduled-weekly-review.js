@@ -2,13 +2,23 @@
 // Hämtar aktiva idéer från Supabase, kör Claude-analys, mailar resultatet.
 // Konfigureras via netlify.toml [[functions."scheduled-weekly-review"]] schedule
 const { createClient } = require("@supabase/supabase-js");
+const { escapeHtml } = require("./_html");
 
 // Hårdkodat till Christians user_id i Supabase — mail går bara till honom.
 const OWNER_USER_ID = process.env.IDEADUMP_OWNER_USER_ID;
 const OWNER_EMAIL = process.env.IDEADUMP_OWNER_EMAIL || "lillen75@gmail.com";
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co";
 
-exports.handler = async () => {
+exports.handler = async (event = {}) => {
+  // Netlify scheduler invokar utan httpMethod. Publika HTTP-anrop måste ha CRON_SECRET.
+  if (event.httpMethod) {
+    const cronSecret = process.env.CRON_SECRET;
+    const headerSecret = event.headers?.["x-cron-secret"] || event.headers?.["X-Cron-Secret"] || "";
+    if (!cronSecret || headerSecret !== cronSecret) {
+      return { statusCode: 401, body: "Unauthorized" };
+    }
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   const resendKey = process.env.RESEND_API_KEY;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -131,19 +141,19 @@ top3.index är 0-baserat. Max 3.`,
 
     <div style="background: #00F0FF0d; border: 1px solid #00F0FF33; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;">
       <p style="margin: 0 0 6px; font-size: 11px; color: #00F0FF; letter-spacing: 1px; text-transform: uppercase; font-weight: 700;">🔍 Veckans analys</p>
-      <p style="margin: 0; font-size: 14px; color: #ccc; line-height: 1.65;">${parsed.weekInsight || ""}</p>
+      <p style="margin: 0; font-size: 14px; color: #ccc; line-height: 1.65;">${escapeHtml(parsed.weekInsight || "")}</p>
     </div>
 
     ${parsed.fastestRevenue ? `
     <div style="background: #00ff8808; border: 1px solid #00ff8833; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;">
       <p style="margin: 0 0 6px; font-size: 11px; color: #00ff88; letter-spacing: 1px; text-transform: uppercase; font-weight: 700;">💰 Snabbaste vägen till intäkt</p>
-      <p style="margin: 0; font-size: 14px; color: #ccc; line-height: 1.65;">${parsed.fastestRevenue}</p>
+      <p style="margin: 0; font-size: 14px; color: #ccc; line-height: 1.65;">${escapeHtml(parsed.fastestRevenue)}</p>
     </div>` : ""}
 
     ${parsed.warning ? `
     <div style="background: #ffaa0008; border: 1px solid #ffaa0033; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;">
       <p style="margin: 0 0 6px; font-size: 11px; color: #ffaa00; letter-spacing: 1px; text-transform: uppercase; font-weight: 700;">⚠️ Coach-varning</p>
-      <p style="margin: 0; font-size: 14px; color: #ccc; line-height: 1.65;">${parsed.warning}</p>
+      <p style="margin: 0; font-size: 14px; color: #ccc; line-height: 1.65;">${escapeHtml(parsed.warning)}</p>
     </div>` : ""}
 
     ${top3Ideas.length > 0 ? `
@@ -152,9 +162,9 @@ top3.index är 0-baserat. Max 3.`,
       const reason = parsed.top3[i]?.reason || "";
       return `
         <div style="background: #0c0c1e; border: 1px solid #1e1e3a; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;">
-          <p style="margin: 0 0 4px; font-size: 10px; color: #00F0FF; letter-spacing: 1px; text-transform: uppercase; font-weight: 700;">${idea.brand}</p>
-          <p style="margin: 0 0 6px; font-size: 14px; color: #ddd; line-height: 1.5;">${idea.aiAnalysis?.summary || idea.transcript?.slice(0, 100) || ""}</p>
-          ${reason ? `<p style="margin: 0; font-size: 12px; color: #888; font-style: italic;">${reason}</p>` : ""}
+          <p style="margin: 0 0 4px; font-size: 10px; color: #00F0FF; letter-spacing: 1px; text-transform: uppercase; font-weight: 700;">${escapeHtml(idea.brand)}</p>
+          <p style="margin: 0 0 6px; font-size: 14px; color: #ddd; line-height: 1.5;">${escapeHtml(idea.aiAnalysis?.summary || idea.transcript?.slice(0, 100) || "")}</p>
+          ${reason ? `<p style="margin: 0; font-size: 12px; color: #888; font-style: italic;">${escapeHtml(reason)}</p>` : ""}
         </div>`;
     }).join("")}
     ` : ""}

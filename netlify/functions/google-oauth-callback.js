@@ -1,5 +1,6 @@
 // Tar emot Googles OAuth-callback, byter auth code mot tokens, sparar per-user.
 const { createClient } = require("@supabase/supabase-js");
+const { requireUser } = require("./_auth");
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co";
 
@@ -19,16 +20,20 @@ exports.handler = async (event) => {
     };
   }
 
-  let code, redirectUri, userId;
+  let code, redirectUri, bodyUserId;
   try {
-    ({ code, redirectUri, userId } = JSON.parse(event.body));
+    ({ code, redirectUri, userId: bodyUserId } = JSON.parse(event.body));
   } catch {
     return { statusCode: 400, body: JSON.stringify({ error: "Ogiltig request body." }) };
   }
 
-  if (!code || !redirectUri || !userId) {
-    return { statusCode: 400, body: JSON.stringify({ error: "code, redirectUri och userId krävs." }) };
+  if (!code || !redirectUri) {
+    return { statusCode: 400, body: JSON.stringify({ error: "code och redirectUri krävs." }) };
   }
+
+  const auth = await requireUser(event, bodyUserId);
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
   // Byt auth code mot access + refresh token
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {

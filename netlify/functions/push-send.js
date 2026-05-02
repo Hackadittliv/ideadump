@@ -1,6 +1,7 @@
 // Skickar push-notifikation till alla registrerade endpoints för en user_id
 const { createClient } = require("@supabase/supabase-js");
 const webpush = require("web-push");
+const { requireUser } = require("./_auth");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -18,16 +19,20 @@ exports.handler = async (event) => {
 
   webpush.setVapidDetails("mailto:hej@ideadump.se", vapidPub, vapidPriv);
 
-  let userId, title, body, url;
+  let bodyUserId, title, body, url;
   try {
-    ({ userId, title, body, url } = JSON.parse(event.body));
+    ({ userId: bodyUserId, title, body, url } = JSON.parse(event.body));
   } catch {
     return { statusCode: 400, body: JSON.stringify({ error: "Ogiltig request body." }) };
   }
 
-  if (!userId || !title) {
-    return { statusCode: 400, body: JSON.stringify({ error: "userId och title krävs." }) };
+  if (!title) {
+    return { statusCode: 400, body: JSON.stringify({ error: "title krävs." }) };
   }
+
+  const auth = await requireUser(event, bodyUserId);
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
   const supabase = createClient(supabaseUrl, serviceKey);
   const { data: subs, error } = await supabase

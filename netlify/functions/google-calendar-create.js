@@ -1,6 +1,7 @@
 // Skapar ett kalenderevent direkt i Google Calendar åt användaren.
 // Använder lagrad refresh_token, förnyar access_token vid behov.
 const { createClient } = require("@supabase/supabase-js");
+const { requireUser } = require("./_auth");
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co";
 
@@ -29,16 +30,20 @@ exports.handler = async (event) => {
     return { statusCode: 503, body: JSON.stringify({ error: "Google OAuth ej konfigurerat." }) };
   }
 
-  let userId, idea, scheduledDate;
+  let bodyUserId, idea, scheduledDate;
   try {
-    ({ userId, idea, scheduledDate } = JSON.parse(event.body));
+    ({ userId: bodyUserId, idea, scheduledDate } = JSON.parse(event.body));
   } catch {
     return { statusCode: 400, body: JSON.stringify({ error: "Ogiltig request body." }) };
   }
 
-  if (!userId || !idea) {
-    return { statusCode: 400, body: JSON.stringify({ error: "userId och idea krävs." }) };
+  if (!idea) {
+    return { statusCode: 400, body: JSON.stringify({ error: "idea krävs." }) };
   }
+
+  const auth = await requireUser(event, bodyUserId);
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
   const supabase = createClient(SUPABASE_URL, serviceKey);
   const { data: tokenRow, error: dbErr } = await supabase

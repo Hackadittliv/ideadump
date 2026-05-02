@@ -1,5 +1,6 @@
 // Registrerar en webbläsares push-subscription i Supabase
 const { createClient } = require("@supabase/supabase-js");
+const { requireUser } = require("./_auth");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -13,16 +14,20 @@ exports.handler = async (event) => {
     return { statusCode: 503, body: JSON.stringify({ error: "SUPABASE_SERVICE_ROLE_KEY saknas." }) };
   }
 
-  let userId, subscription, userAgent;
+  let bodyUserId, subscription, userAgent;
   try {
-    ({ userId, subscription, userAgent } = JSON.parse(event.body));
+    ({ userId: bodyUserId, subscription, userAgent } = JSON.parse(event.body));
   } catch {
     return { statusCode: 400, body: JSON.stringify({ error: "Ogiltig request body." }) };
   }
 
-  if (!userId || !subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
-    return { statusCode: 400, body: JSON.stringify({ error: "userId och komplett subscription krävs." }) };
+  if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+    return { statusCode: 400, body: JSON.stringify({ error: "Komplett subscription krävs." }) };
   }
+
+  const auth = await requireUser(event, bodyUserId);
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
   const supabase = createClient(supabaseUrl, serviceKey);
 
