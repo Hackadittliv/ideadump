@@ -1,7 +1,7 @@
 {
   "name": "IdeaDump",
   "short_name": "IdeaDump",
-  "description": "Capture, analyze and act on your ideas",
+  "description": "Fånga, analysera och agera på dina idéer",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

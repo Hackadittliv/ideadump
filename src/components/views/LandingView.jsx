@@ -48,9 +48,10 @@ export default function LandingView({ onShowLogin, onShowPrivacy }) {
       background: "radial-gradient(ellipse at 30% 0%, #060618 0%, #02020e 100%)",
       color: "#e0e0e0",
       fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+      paddingTop: "env(safe-area-inset-top, 0px)",
+      paddingBottom: "env(safe-area-inset-bottom, 0px)",
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
         @keyframes fade-up { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
         .s1 { animation: fade-up 0.5s ease both; }
         .s2 { animation: fade-up 0.5s 0.08s ease both; }
@@ -113,6 +114,18 @@ export default function LandingView({ onShowLogin, onShowPrivacy }) {
           <p style={{ fontSize: 14, color: "#666", lineHeight: 1.7, margin: "0 0 28px" }}>
             Det här är inte en produkt till salu. Det är en titt bakom kulisserna på hur jag jobbar — och ett exempel på vilken typ av AI-verktyg vi bygger på Conversify.
           </p>
+
+          {/* Primär CTA */}
+          <button onClick={onShowLogin} style={{
+            display: "inline-flex", alignItems: "center", gap: 10,
+            padding: "14px 22px", minHeight: 48,
+            background: "linear-gradient(135deg, #00F0FF28 0%, #00c8d440 100%)",
+            border: "1px solid #00F0FF55", borderRadius: 12,
+            color: "#00F0FF", fontSize: 15, fontWeight: 700,
+            cursor: "pointer",
+          }}>
+            Logga in med Google →
+          </button>
         </section>
 
         {/* Hur det fungerar */}
