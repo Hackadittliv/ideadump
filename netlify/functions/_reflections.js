@@ -2,6 +2,7 @@
 // kontext-block för LLM-prompts. Pending och archived inkluderas inte.
 const { createClient } = require("@supabase/supabase-js");
 const { SUPABASE_URL } = require("./_auth");
+const { wrapStoredContent } = require("./_llm");
 
 const TYPE_LABEL = {
   pattern: "Mönster",
@@ -11,13 +12,20 @@ const TYPE_LABEL = {
   goal_shift: "Mål-skift",
 };
 
-async function loadActiveReflections(userId) {
+// brand = null → globala lärdomar; brand = "HDL" → matchar brand ELLER globala.
+async function loadActiveReflections(userId, { brand } = {}) {
   const supabase = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-  const { data, error } = await supabase
+  let query = supabase
     .from("ideadump_user_reflections")
-    .select("type, statement, status")
+    .select("id, type, statement, status, brand")
     .eq("user_id", userId)
-    .in("status", ["active", "pinned"])
+    .in("status", ["active", "pinned"]);
+
+  if (brand) {
+    query = query.or(`brand.is.null,brand.eq.${brand}`);
+  }
+
+  const { data, error } = await query
     .order("status", { ascending: false }) // pinned först
     .limit(30);
 
@@ -28,13 +36,15 @@ async function loadActiveReflections(userId) {
   return data || [];
 }
 
-// Formatera som textblock för system-prompt
+// Formatera som textblock för system-prompt — varje statement wrappas så
+// att modellen inte kan luras av instruktioner inuti en reflection.
 function formatReflectionsBlock(reflections) {
   if (!reflections.length) return "";
   const lines = reflections.map((r) => {
     const label = TYPE_LABEL[r.type] || r.type;
     const pin = r.status === "pinned" ? " [PRIORITERAD]" : "";
-    return `- ${label}${pin}: ${r.statement}`;
+    const scope = r.brand ? ` [${r.brand}]` : "";
+    return `- ${label}${pin}${scope}: ${wrapStoredContent("reflection", r.statement)}`;
   });
   return `LÄRDOMAR OM ANVÄNDAREN (sparade över tid, använd som kontext):
 ${lines.join("\n")}
@@ -42,14 +52,16 @@ ${lines.join("\n")}
 OBS: Lärdomarna är hypoteser, inte absolut sanning. Om en ny idé tydligt motsäger ett mönster — flagga det istället för att blint följa mönstret. Coachens jobb är att utmana, inte bekräfta.`;
 }
 
-// Markera reflections som "använda" så de inte arkiveras pga inaktivitet
-async function markUsed(userId) {
+// Markera bara de reflections som faktiskt laddades, så last_used_at
+// reflekterar verklig användning (inte bara att en analys kördes).
+async function markUsed(userId, ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return;
   const supabase = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   await supabase
     .from("ideadump_user_reflections")
     .update({ last_used_at: new Date().toISOString() })
     .eq("user_id", userId)
-    .in("status", ["active", "pinned"]);
+    .in("id", ids);
 }
 
 module.exports = { loadActiveReflections, formatReflectionsBlock, markUsed };

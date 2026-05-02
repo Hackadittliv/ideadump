@@ -112,10 +112,13 @@ function formatBadge(n) {
   return n > 99 ? "99+" : String(n);
 }
 
-function Badge({ count }) {
+function Badge({ count, color }) {
   const text = formatBadge(count);
   if (!text) return null;
   const isWide = text === "99+";
+  const bg = color || NAV_COLORS.badgeBg;
+  // Glow plockar bg-färgen, men vi vill ha #02020e text på pastell/cyan.
+  const glow = color === "#ffaa00" ? "rgba(255,170,0,0.45)" : "rgba(0,240,255,0.45)";
   return (
     <div
       aria-label={`${count} nya`}
@@ -127,7 +130,7 @@ function Badge({ count }) {
         height: 18,
         padding: isWide ? "0 5px" : "0 4px",
         borderRadius: 999,
-        background: NAV_COLORS.badgeBg,
+        background: bg,
         color: NAV_COLORS.badgeText,
         fontFamily: "'DM Mono', ui-monospace, monospace",
         fontWeight: 600,
@@ -137,7 +140,7 @@ function Badge({ count }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 0 0 2px #070714, 0 0 10px rgba(0,240,255,0.45)",
+        boxShadow: `0 0 0 2px #070714, 0 0 10px ${glow}`,
         letterSpacing: 0,
         whiteSpace: "nowrap",
       }}
@@ -147,7 +150,7 @@ function Badge({ count }) {
   );
 }
 
-function BottomNavTab({ tab, active, badgeCount, onSelect }) {
+function BottomNavTab({ tab, active, badgeCount, badgeColor, onSelect }) {
   const c = active ? NAV_COLORS.textActive : NAV_COLORS.textInactive;
   return (
     <button
@@ -176,7 +179,7 @@ function BottomNavTab({ tab, active, badgeCount, onSelect }) {
     >
       <div style={{ position: "relative", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <tab.Glyph filled={active} c={c} />
-        {tab.key === "list" && <Badge count={badgeCount} />}
+        <Badge count={badgeCount} color={badgeColor} />
       </div>
 
       <div
@@ -210,7 +213,12 @@ function BottomNavTab({ tab, active, badgeCount, onSelect }) {
   );
 }
 
-export default function BottomNav({ view, onNav, inboxCount = 0 }) {
+export default function BottomNav({ view, onNav, inboxCount = 0, reflectionsPendingCount = 0 }) {
+  const badgeFor = (key) => {
+    if (key === "list") return { count: inboxCount, color: NAV_COLORS.badgeBg };
+    if (key === "reflections") return { count: reflectionsPendingCount, color: "#ffaa00" };
+    return { count: 0, color: NAV_COLORS.badgeBg };
+  };
   return (
     <nav
       aria-label="Huvudnavigation"
@@ -237,15 +245,19 @@ export default function BottomNav({ view, onNav, inboxCount = 0 }) {
           padding: "0 4px",
         }}
       >
-        {TAB_DEFS.map((t) => (
-          <BottomNavTab
-            key={t.key}
-            tab={t}
-            active={view === t.key}
-            badgeCount={t.key === "list" ? inboxCount : 0}
-            onSelect={onNav}
-          />
-        ))}
+        {TAB_DEFS.map((t) => {
+          const b = badgeFor(t.key);
+          return (
+            <BottomNavTab
+              key={t.key}
+              tab={t}
+              active={view === t.key}
+              badgeCount={b.count}
+              badgeColor={b.color}
+              onSelect={onNav}
+            />
+          );
+        })}
       </div>
     </nav>
   );

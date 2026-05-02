@@ -17,16 +17,30 @@ IdeaDump är en **röstdriven idéfångst-app med AI-analys**. Verktyget är byg
 | Styling | Inline styles (dark theme, cyan accent #00F0FF) |
 | AI-analys | Anthropic Claude API (pros/cons, ICE-scoring, coaching) |
 | Rösttranskription | OpenAI Whisper API (valfritt) |
-| Data | localStorage (persistent, ingen backend) |
+| Backend | Supabase (Auth, Postgres, RLS) + Netlify Functions |
+| Lokal cache | localStorage (snabb load, cloudSync till Supabase) |
 | Hosting | Netlify |
 | PWA | manifest.json + Service Worker |
 
 ### VIKTIGA begränsningar
-- **Ingen backend/databas** — all data i localStorage
-- **API-nycklar** sparas i localStorage via inställningspanelen (⚙️)
-- **Inga TypeScript** — projektet använder `.jsx`
-- **Inga externa CSS-ramverk** — inline styles genomgående
-- **PWA-first** — ska fungera som installerad app på iPhone
+- **Supabase är källan av sanning** — localStorage används som cache; cloudSync skriver upp ändringar och `loadFromCloud` returnerar molnet vid login.
+- **Service-role-key i Functions bypassar RLS** — varje endpoint MÅSTE filtrera på `user_id` manuellt (`requireUser` i `_auth.js` returnerar verifierat userId).
+- **API-nycklar** för Anthropic/OpenAI ligger i Netlify-miljövariabler, inte i klienten.
+- **Inga TypeScript** — projektet använder `.jsx`.
+- **Inga externa CSS-ramverk** — inline styles genomgående.
+- **PWA-first** — ska fungera som installerad app på iPhone.
+
+### Agent-minne (3 lager)
+Modellen som syns under fliken **Lärdomar** har tre paneler — `MemoriesPanel`, `SkillsPanel`, `RubricsPanel`:
+
+1. **Memories / Reflections** (`ideadump_user_reflections`) — lärdomar om användaren (mönster, preferenser, anti-mönster). Injiceras som system-prompt-kontext i `claude-analyze`. Brand-scopas via nullable `brand`-kolumn (NULL = global). Söndagsanalysen + per-idé-knappen genererar förslag som `status='pending'`.
+2. **Skills** (`ideadump_agent_skills`) — återanvändbara prompt-fragment (playbooks) med trigger-typer `always` / `keyword` / `brand`. Matchas lokalt mot transcript+brand i `_skills.js`. Cap: 5 skills per analys, 400 tecken per fragment.
+3. **Outcomes / Rubrics** (`ideadump_idea_outcomes`) — ground truth om en idé blev `shipped`/`sold`/`killed`/`stalled`/`still_working`. Snapshottar `predicted_warning` + `predicted_ice_total` vid capture för att korrelera AI-precision i `RubricsPanel`.
+
+### Prompt-injection-skydd
+- `_llm.js` har `wrapUserContent` (fritext från användaren) och `wrapStoredContent` (data från databasen, t.ex. reflections som ursprungligen kom från Claude).
+- `PROMPT_INJECTION_GUARD` läggs sist i system-prompten i alla LLM-anropande functions.
+- Reflection-statements wrappas alltid innan de injiceras — söndagsanalysen kan annars förgifta framtida prompts via fritext.
 
 ---
 
@@ -147,9 +161,11 @@ Siri-genväg: "Hej Siri, dumpa en idé" → öppnar appen med autorecord.
 
 ## VIKTIGT — saker att hålla koll på
 
-1. **localStorage-storlek** — max ~5MB, exportera data regelbundet
+1. **localStorage-storlek** — max ~5MB; idéer ligger primärt i Supabase, lokalt är cache.
 2. **Whisper API** — valfritt, appen fungerar utan det (manuell textinmatning)
 3. **Claude API rate limits** — visa loading-state vid AI-analys
 4. **Mobile-first** — testa ALLTID på 375px bredd
 5. **PWA-ikoner** — icon-192.png och icon-512.png måste finnas i /public
 6. **Autorecord** — hantera browser-permissions för mikrofon elegant
+7. **Supabase RLS** — service-role bypassar; alla functions måste filtrera på `auth.userId`.
+8. **Reflection prompt-injection** — wrap:a alltid `r.statement` med `wrapStoredContent` innan injection.

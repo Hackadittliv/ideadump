@@ -2,6 +2,7 @@
 const { requireUser } = require("./_auth");
 const { wrapUserContent, PROMPT_INJECTION_GUARD } = require("./_llm");
 const { loadActiveReflections, formatReflectionsBlock, markUsed } = require("./_reflections");
+const { loadRelevantSkills, formatSkillsBlock, markSkillsUsed } = require("./_skills");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -19,16 +20,24 @@ exports.handler = async (event) => {
     };
   }
 
-  let transcript, userConfig;
+  let transcript, userConfig, hintBrand;
   try {
-    ({ transcript, userConfig } = JSON.parse(event.body));
+    ({ transcript, userConfig, hintBrand } = JSON.parse(event.body));
   } catch {
     return { statusCode: 400, body: JSON.stringify({ error: "Ogiltig request body." }) };
   }
 
-  // Hämta aktiva lärdomar — fail-soft, en SQL-glitch ska inte stoppa analysen
-  const reflections = await loadActiveReflections(auth.userId).catch(() => []);
+  // Hämta aktiva lärdomar + matchande skills — fail-soft, en SQL-glitch ska
+  // inte stoppa analysen. hintBrand låter klienten skicka in vilken brand idén
+  // troligen tillhör (t.ex. förvald i UI:t) så vi kan filtrera ner kontext-bloat.
+  const [reflections, skills] = await Promise.all([
+    loadActiveReflections(auth.userId, { brand: hintBrand }).catch(() => []),
+    loadRelevantSkills(auth.userId, { transcript: transcript || "", brand: hintBrand }).catch(() => []),
+  ]);
   const reflectionsBlock = formatReflectionsBlock(reflections);
+  const skillsBlock = formatSkillsBlock(skills);
+  const usedReflectionIds = reflections.map((r) => r.id);
+  const usedSkillIds = skills.map((s) => s.id);
 
   // Användarens anpassade varumärken + mål — fallback till Christians defaults
   const brands = Array.isArray(userConfig?.brands) && userConfig.brands.length > 0
@@ -70,6 +79,8 @@ COACHING-STIL:
 - Håll coachComment kort: max 2 meningar, inga floskler
 
 ${reflectionsBlock}
+
+${skillsBlock}
 
 ${PROMPT_INJECTION_GUARD}
 
@@ -125,8 +136,9 @@ energyWarning: "genuine", "distraction", eller "neutral".`,
   }
 
   const data = await res.json();
-  // Markera reflections som använda — fail-soft
-  markUsed(auth.userId).catch(() => {});
+  // Markera bara det vi faktiskt laddade — fail-soft
+  markUsed(auth.userId, usedReflectionIds).catch(() => {});
+  markSkillsUsed(auth.userId, usedSkillIds).catch(() => {});
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json" },

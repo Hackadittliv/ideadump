@@ -4,7 +4,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const { escapeHtml } = require("./_html");
 const { SUPABASE_URL } = require("./_auth");
-const { wrapUserContent, PROMPT_INJECTION_GUARD } = require("./_llm");
+const { wrapUserContent, wrapStoredContent, PROMPT_INJECTION_GUARD } = require("./_llm");
 
 // Hårdkodat till Christians user_id i Supabase — mail går bara till honom.
 const OWNER_USER_ID = process.env.IDEADUMP_OWNER_USER_ID;
@@ -133,7 +133,7 @@ top3.index är 0-baserat. Max 3.`,
     .limit(20);
 
   const reflectionContext = (existingReflections || [])
-    .map(r => `- [${r.id}] ${r.type}: ${r.statement}`)
+    .map(r => `- [${r.id}] ${r.type}: ${wrapStoredContent("reflection", r.statement)}`)
     .join("\n") || "(inga befintliga lärdomar)";
 
   const allIdeasContext = allIdeas.slice(-30).map(i =>

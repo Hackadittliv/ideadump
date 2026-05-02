@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 import ScoreRing from "./ui/ScoreRing.jsx";
 import Slider from "./ui/Slider.jsx";
 import ProsCons from "./ui/ProsCons.jsx";
+import OutcomePicker from "./ui/OutcomePicker.jsx";
+import { suggestReflectionFromIdea } from "../utils/reflections.js";
 import { STATUSES, getBrands, getBrandColorsMap } from "../styles/theme.js";
 import { iceTotal } from "../utils/iceCalc.js";
 import { exportToCalendar } from "../utils/icsExport.js";
@@ -19,7 +21,28 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
   const [notionMsg, setNotionMsg] = useState("");
   const [calStatus, setCalStatus] = useState(""); // "", "syncing", "ok", "error"
   const [calMsg, setCalMsg] = useState("");
+  const [suggestStatus, setSuggestStatus] = useState(""); // "", "loading", "ok", "skipped", "error"
+  const [suggestMsg, setSuggestMsg] = useState("");
   const dateInputRef = useRef(null);
+
+  const handleSuggestReflection = async () => {
+    setSuggestStatus("loading");
+    setSuggestMsg("");
+    try {
+      const res = await suggestReflectionFromIdea(idea.id);
+      if (res.skipped) {
+        setSuggestStatus("skipped");
+        setSuggestMsg(res.reason || "Ingen tydlig lärdom.");
+      } else {
+        setSuggestStatus("ok");
+        setSuggestMsg("Förslag sparat — öppna Lärdomar för att godkänna.");
+      }
+      setTimeout(() => { setSuggestStatus(""); setSuggestMsg(""); }, 6000);
+    } catch (e) {
+      setSuggestStatus("error");
+      setSuggestMsg(e.message || "Kunde inte spara.");
+    }
+  };
 
   const handleCalendar = async () => {
     // Försök Google Calendar direkt om OAuth är konfad + användare inloggad
@@ -203,6 +226,12 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
       {/* Expanderat innehåll */}
       {expanded && (
         <div style={{ marginTop: 18, borderTop: "1px solid #181830", paddingTop: 18 }}>
+
+          {/* Outcome — ground truth för att korrelera AI-förutsägelser mot
+              verkligheten. Visas inte för inbox (för tidigt att fråga). */}
+          {idea.status !== "inbox" && (
+            <OutcomePicker idea={idea} />
+          )}
 
           {idea.aiAnalysis?.nextActionSuggestion && (
             <div style={{
@@ -482,6 +511,38 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
               <p style={{ margin: 0, fontSize: 13, color: "#ccc", lineHeight: 1.5 }}>
                 {idea.aiAnalysis.whyThisMatters}
               </p>
+            </div>
+          )}
+
+          {/* Föreslå lärdom från denna idé — sparas som pending i Lärdomar */}
+          {idea.aiAnalysis && (
+            <div style={{ marginBottom: 16 }}>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleSuggestReflection(); }}
+                disabled={suggestStatus === "loading"}
+                style={{
+                  width: "100%", padding: "10px",
+                  background: suggestStatus === "ok" ? "#00ff8810" : "#ffaa0008",
+                  border: `1px solid ${suggestStatus === "ok" ? "#00ff8844" : "#ffaa0033"}`,
+                  borderRadius: 10,
+                  color: suggestStatus === "ok" ? "#00ff88" : "#ffaa00",
+                  fontSize: 12, cursor: suggestStatus === "loading" ? "wait" : "pointer",
+                  minHeight: 40,
+                }}
+              >
+                {suggestStatus === "loading" ? "🤔 Letar mönster..." : "💡 Föreslå lärdom från denna idé"}
+              </button>
+              {suggestMsg && (
+                <p style={{
+                  margin: "6px 0 0", fontSize: 11,
+                  color: suggestStatus === "error" ? "#ff6644"
+                    : suggestStatus === "skipped" ? "#888"
+                    : "#00ff88",
+                  lineHeight: 1.5,
+                }}>
+                  {suggestMsg}
+                </p>
+              )}
             </div>
           )}
 

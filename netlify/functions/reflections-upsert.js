@@ -18,7 +18,7 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch { return { statusCode: 400, body: JSON.stringify({ error: "Ogiltig body." }) }; }
 
-  const { id, type, statement, status, evidence_idea_ids } = body;
+  const { id, type, statement, status, evidence_idea_ids, brand } = body;
   if (!type || !ALLOWED_TYPES.includes(type)) {
     return { statusCode: 400, body: JSON.stringify({ error: `type måste vara en av: ${ALLOWED_TYPES.join(", ")}` }) };
   }
@@ -28,15 +28,33 @@ exports.handler = async (event) => {
   if (status && !ALLOWED_STATUSES.includes(status)) {
     return { statusCode: 400, body: JSON.stringify({ error: `status måste vara en av: ${ALLOWED_STATUSES.join(", ")}` }) };
   }
+  const cleanBrand = typeof brand === "string" && brand.trim().length > 0
+    ? brand.trim().slice(0, 50)
+    : null;
 
   const supabase = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+  // Validera att evidence_idea_ids faktiskt tillhör användarens idéer.
+  // Idéer ligger i en JSONB-array på ideadump_user_data, så vi laddar
+  // ID-listan en gång och filtrerar bort främmande.
+  let validEvidence = [];
+  if (Array.isArray(evidence_idea_ids) && evidence_idea_ids.length > 0) {
+    const { data: ud } = await supabase
+      .from("ideadump_user_data")
+      .select("data")
+      .eq("user_id", auth.userId)
+      .single();
+    const ownIds = new Set((ud?.data?.ideas || []).map((i) => i.id).filter(Boolean));
+    validEvidence = evidence_idea_ids.filter((x) => ownIds.has(x)).slice(0, 20);
+  }
 
   const row = {
     user_id: auth.userId,
     type,
     statement: statement.trim().slice(0, 500),
     status: status || "active",
-    evidence_idea_ids: Array.isArray(evidence_idea_ids) ? evidence_idea_ids.slice(0, 20) : [],
+    evidence_idea_ids: validEvidence,
+    brand: cleanBrand,
     updated_at: new Date().toISOString(),
   };
 

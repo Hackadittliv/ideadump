@@ -13,6 +13,7 @@ import { saveToCloud, loadFromCloud } from "./utils/cloudSync.js";
 import { loadIdeas, saveIdeas, loadApiKeys } from "./utils/storage.js";
 import { analyzeIdea } from "./utils/claudeApi.js";
 import { authedFetch } from "./utils/authedFetch.js";
+import { listReflections } from "./utils/reflections.js";
 
 export default function IdeaDump() {
   const { user, loading: authLoading, betaApproved, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut } = useAuth();
@@ -31,6 +32,7 @@ export default function IdeaDump() {
   const [statusMsg, setStatusMsg]     = useState("");
 
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [reflectionsPendingCount, setReflectionsPendingCount] = useState(0);
 
   const recRef          = useRef(null);
   const mediaRef        = useRef(null);
@@ -277,6 +279,18 @@ export default function IdeaDump() {
 
   const inboxCount = ideas.filter(i => i.status === "inbox").length;
 
+  // Räkna pending reflections för badgen — refresh efter varje vy-byte
+  // (cheap call, en SQL-query) så badgen reagerar när söndagsbatchen kört
+  // eller användaren godkänt något i Lärdomar-vyn.
+  useEffect(() => {
+    if (!user || !betaApproved || authLoading) return;
+    let cancelled = false;
+    listReflections()
+      .then((rs) => { if (!cancelled) setReflectionsPendingCount(rs.filter(r => r.status === "pending").length); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [user, betaApproved, authLoading, view]);
+
   // Auth-laddning
   if (authLoading) return (
     <div style={{
@@ -438,7 +452,10 @@ export default function IdeaDump() {
       )}
 
       {view === "reflections" && (
-        <ReflectionsView flash={flash} />
+        <ReflectionsView
+          flash={flash}
+          onPendingCountChange={setReflectionsPendingCount}
+        />
       )}
 
       {view === "settings" && (
@@ -472,7 +489,12 @@ export default function IdeaDump() {
         }}>Integritetspolicy</button>
       </div>
 
-      <BottomNav view={view} onNav={setView} inboxCount={inboxCount} />
+      <BottomNav
+        view={view}
+        onNav={setView}
+        inboxCount={inboxCount}
+        reflectionsPendingCount={reflectionsPendingCount}
+      />
     </div>
   );
 }
