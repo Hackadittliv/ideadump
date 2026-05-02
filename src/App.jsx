@@ -447,6 +447,7 @@ export default function IdeaDump() {
       {view === "weekly" && (
         <WeeklyReviewView
           ideas={ideas}
+          user={user}
           onUpdateIdea={updated => persistIdeas(ideas.map(i => i.id === updated.id ? updated : i))}
         />
       )}

@@ -18,6 +18,52 @@ async function refreshAccessToken(refreshToken) {
   return res.json();
 }
 
+// Slå upp eller skapa "IdeaDump"-kalendern. Sparar id:t i tokens-raden så
+// vi inte behöver göra calendarList-callet vid varje bokning. Faller tillbaka
+// till "primary" om något skiter sig (mailet ska aldrig blockeras av detta).
+async function ensureIdeadumpCalendarId(supabase, userId, accessToken, tokenRow) {
+  if (tokenRow.ideadump_calendar_id) return tokenRow.ideadump_calendar_id;
+
+  const listRes = await fetch(
+    "https://www.googleapis.com/calendar/v3/users/me/calendarList?minAccessRole=owner",
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  if (listRes.ok) {
+    const list = await listRes.json();
+    const found = (list.items || []).find((c) => c.summary === "IdeaDump");
+    if (found?.id) {
+      await supabase
+        .from("ideadump_google_tokens")
+        .update({ ideadump_calendar_id: found.id, updated_at: new Date().toISOString() })
+        .eq("user_id", userId);
+      return found.id;
+    }
+  }
+
+  const createRes = await fetch(
+    "https://www.googleapis.com/calendar/v3/calendars",
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        summary: "IdeaDump",
+        description: "Idéer och Next Actions från IdeaDump-appen",
+        timeZone: "Europe/Stockholm",
+      }),
+    },
+  );
+  if (!createRes.ok) {
+    console.error("[calendar] kunde inte skapa IdeaDump-kalender:", await createRes.text());
+    return "primary";
+  }
+  const created = await createRes.json();
+  await supabase
+    .from("ideadump_google_tokens")
+    .update({ ideadump_calendar_id: created.id, updated_at: new Date().toISOString() })
+    .eq("user_id", userId);
+  return created.id;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method not allowed" };
@@ -118,13 +164,18 @@ exports.handler = async (event) => {
     };
   }
 
+  // Slå upp/skapa separat IdeaDump-kalender så event:en inte krockar med
+  // riktiga möten i primary. Faller tillbaka till "primary" om något fail:ar.
+  const calendarId = await ensureIdeadumpCalendarId(supabase, userId, accessToken, tokenRow);
+
   // Idempotens: om idén redan har ett eventId, uppdatera det istället
   // för att skapa ett nytt — annars produceras dubletter när användaren
   // bokar om eller flippar status fram och tillbaka.
   const existingEventId = idea.googleEventId;
+  const baseUrl = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`;
   const url = existingEventId
-    ? `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(existingEventId)}`
-    : "https://www.googleapis.com/calendar/v3/calendars/primary/events";
+    ? `${baseUrl}/${encodeURIComponent(existingEventId)}`
+    : baseUrl;
 
   const method = existingEventId ? "PATCH" : "POST";
 
@@ -139,7 +190,7 @@ exports.handler = async (event) => {
 
   // Om PATCH 404:ar (event raderat i Google) → faila tillbaka till POST
   if (existingEventId && res.status === 404) {
-    res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+    res = await fetch(baseUrl, {
       method: "POST",
       headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify(eventBody),

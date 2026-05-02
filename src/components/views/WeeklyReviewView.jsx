@@ -3,12 +3,34 @@ import { useState } from "react";
 import { exportToCalendar } from "../../utils/icsExport.js";
 import { authedFetch } from "../../utils/authedFetch.js";
 import { getBrandColorsMap } from "../../styles/theme.js";
+import { createCalendarEvent, googleOAuthConfigured } from "../../utils/googleCalendar.js";
 
-export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
+// Returnera N kommande vardagsdatum som "YYYY-MM-DD"-strängar (start = imorgon).
+function nextWorkdays(count, from = new Date()) {
+  const out = [];
+  const d = new Date(from);
+  d.setDate(d.getDate() + 1); // start imorgon
+  while (out.length < count) {
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) out.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+function nextWorkday(from = new Date()) {
+  return nextWorkdays(1, from)[0];
+}
+
+export default function WeeklyReviewView({ ideas, onUpdateIdea, user }) {
   const [loading, setLoading]   = useState(false);
   const [review, setReview]     = useState(null);
   const [error, setError]       = useState("");
   const [booked, setBooked]     = useState(new Set());
+  const [scheduledDates, setScheduledDates] = useState({}); // ideaId → "YYYY-MM-DD"
+  const [bookingId, setBookingId] = useState(null);
+  const [bulkBooking, setBulkBooking] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState("");
 
   const allActive = ideas.filter(i => i.status === "inbox" || i.status === "next");
   const isBlocked = (idea) => {
@@ -24,6 +46,69 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
   const overdueIdeas = ideas.filter(i =>
     i.deadline && new Date(i.deadline) < new Date() && i.status !== "done"
   );
+
+  // Decision pressure: Next Actions utan deadline OCH utan kalenderbokning
+  // är "ovillkorade åtaganden" — antingen boka eller flytta ur Next.
+  const nextWithoutTime = ideas.filter(i =>
+    i.status === "next" && !i.deadline && !i.googleEventId
+  );
+
+  const canUseGoogle = googleOAuthConfigured() && !!user?.id;
+
+  const bookOne = async (idea, dateOverride) => {
+    setBookingId(idea.id);
+    setError("");
+    try {
+      const date = dateOverride || scheduledDates[idea.id] || nextWorkday();
+      if (canUseGoogle) {
+        const result = await createCalendarEvent(user.id, idea, date);
+        onUpdateIdea({ ...idea, googleEventId: result.eventId, googleEventLink: result.htmlLink });
+      } else {
+        exportToCalendar(idea);
+      }
+      setBooked(prev => new Set([...prev, idea.id]));
+    } catch (e) {
+      setError("Bokning misslyckades: " + e.message);
+    } finally {
+      setBookingId(null);
+    }
+  };
+
+  const bulkBook = async () => {
+    if (nextWithoutTime.length === 0) return;
+    if (!canUseGoogle) {
+      setError("Bulk-bokning kräver Google Calendar — koppla i Inställningar.");
+      return;
+    }
+    setBulkBooking(true);
+    setBulkMsg(`Bokar ${nextWithoutTime.length} idé${nextWithoutTime.length === 1 ? "" : "er"}...`);
+    setError("");
+
+    // Sortera högst-ICE först — de viktigaste får tidigast slot
+    const sorted = [...nextWithoutTime].sort((a, b) => {
+      const aIce = a.aiAnalysis?.ice ? (a.aiAnalysis.ice.impact + a.aiAnalysis.ice.confidence + a.aiAnalysis.ice.ease) / 3 : 0;
+      const bIce = b.aiAnalysis?.ice ? (b.aiAnalysis.ice.impact + b.aiAnalysis.ice.confidence + b.aiAnalysis.ice.ease) / 3 : 0;
+      return bIce - aIce;
+    });
+
+    const days = nextWorkdays(sorted.length);
+    let okCount = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      try {
+        const idea = sorted[i];
+        const result = await createCalendarEvent(user.id, idea, days[i]);
+        onUpdateIdea({ ...idea, googleEventId: result.eventId, googleEventLink: result.htmlLink });
+        setBooked(prev => new Set([...prev, idea.id]));
+        okCount++;
+      } catch (e) {
+        console.error("Bulk-bokning misslyckades för en idé:", e);
+      }
+    }
+
+    setBulkMsg(`✅ Bokade ${okCount}/${sorted.length} i din IdeaDump-kalender.`);
+    setBulkBooking(false);
+    setTimeout(() => setBulkMsg(""), 6000);
+  };
 
   const runReview = async () => {
     if (activeIdeas.length === 0) return;
@@ -67,6 +152,97 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea }) {
           {activeIdeas.length} aktiva idéer · {overdueIdeas.length > 0 ? `${overdueIdeas.length} försenade` : "inga försenade"}{blockedCount > 0 ? ` · ${blockedCount} blockerade` : ""}
         </p>
       </div>
+
+      {/* Decision pressure: Next Actions utan tid */}
+      {nextWithoutTime.length > 0 && (
+        <div style={{
+          background: "#ffaa0008", border: "1px solid #ffaa0033",
+          borderRadius: 12, padding: "14px 16px", marginBottom: 16,
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+            <p style={{ margin: 0, fontSize: 11, color: "#ffaa00", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
+              🎯 Next Actions utan tid · {nextWithoutTime.length}
+            </p>
+          </div>
+          <p style={{ margin: "0 0 12px", fontSize: 12, color: "#aaa", lineHeight: 1.6 }}>
+            Dessa väntar på en plats i kalendern. Antingen boka tid — eller flytta ut ur Next.
+          </p>
+
+          {canUseGoogle && (
+            <button
+              onClick={bulkBook}
+              disabled={bulkBooking}
+              style={{
+                width: "100%", padding: "10px", marginBottom: 10,
+                background: bulkBooking ? "#0a0a1a" : "#ffaa0014",
+                border: `1px solid ${bulkBooking ? "#222" : "#ffaa0044"}`,
+                borderRadius: 10, color: bulkBooking ? "#666" : "#ffaa00",
+                fontSize: 12, cursor: bulkBooking ? "wait" : "pointer", minHeight: 40,
+              }}
+            >
+              {bulkBooking ? "Bokar..." : `📅 Auto-boka alla över ${nextWithoutTime.length} vardag${nextWithoutTime.length === 1 ? "" : "ar"}`}
+            </button>
+          )}
+
+          {bulkMsg && (
+            <p style={{ margin: "0 0 10px", fontSize: 11, color: "#00ff88", lineHeight: 1.5 }}>{bulkMsg}</p>
+          )}
+
+          {nextWithoutTime.map(idea => {
+            const color = getBrandColorsMap()[idea.brand] || "#888";
+            const ice = idea.aiAnalysis?.ice
+              ? ((idea.aiAnalysis.ice.impact + idea.aiAnalysis.ice.confidence + idea.aiAnalysis.ice.ease) / 3).toFixed(1)
+              : "–";
+            const isBooked = booked.has(idea.id);
+            const isLoading = bookingId === idea.id;
+            const date = scheduledDates[idea.id] || nextWorkday();
+            return (
+              <div key={idea.id} style={{
+                background: "#0a0a18", border: "1px solid #1a1a2e",
+                borderRadius: 10, padding: "10px 12px", marginBottom: 8,
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontSize: 10, color, fontWeight: 700 }}>{idea.brand}</span>
+                  <span style={{ fontSize: 10, color: "#666", fontFamily: "DM Mono, monospace" }}>ICE {ice}</span>
+                </div>
+                <p style={{ margin: "0 0 8px", fontSize: 12, color: "#bbb", lineHeight: 1.4 }}>
+                  {idea.aiAnalysis?.nextActionSuggestion || idea.aiAnalysis?.summary?.slice(0, 80) || idea.transcript?.slice(0, 80)}
+                </p>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input
+                    type="date"
+                    value={date}
+                    min={new Date().toISOString().slice(0, 10)}
+                    onChange={e => setScheduledDates({ ...scheduledDates, [idea.id]: e.target.value })}
+                    disabled={isBooked || isLoading}
+                    style={{
+                      flex: 1, padding: "8px 10px", minHeight: 38,
+                      background: "#02020e", border: "1px solid #1e1e3a", borderRadius: 8,
+                      color: "#ccc", fontSize: 12, outline: "none",
+                    }}
+                  />
+                  <button
+                    onClick={() => bookOne(idea)}
+                    disabled={isBooked || isLoading}
+                    style={{
+                      padding: "8px 14px", minHeight: 38,
+                      background: isBooked ? "#00ff8810" : "#00F0FF14",
+                      border: `1px solid ${isBooked ? "#00ff8844" : "#00F0FF44"}`,
+                      borderRadius: 8,
+                      color: isBooked ? "#00ff88" : "#00F0FF",
+                      fontSize: 12, fontWeight: 700,
+                      cursor: isBooked || isLoading ? "default" : "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {isLoading ? "..." : isBooked ? "✓ Bokad" : "📅 Boka"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Försenade idéer */}
       {overdueIdeas.length > 0 && (
