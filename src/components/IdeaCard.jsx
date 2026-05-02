@@ -685,19 +685,23 @@ export default function IdeaCard({ idea, onUpdate, onDelete, expanded, onToggle,
                 <button onClick={() => setConfirmDelete(false)}
                   style={{
                     background: "transparent", border: "1px solid #333", borderRadius: 8,
-                    padding: "6px 10px", color: "#666", fontSize: 11, cursor: "pointer",
+                    padding: "11px 14px", minHeight: 44,
+                    color: "#666", fontSize: 12, cursor: "pointer",
                   }}>Avbryt</button>
                 <button onClick={e => { e.stopPropagation(); onDelete(idea.id); }}
                   style={{
                     background: "#ff220018", border: "1px solid #ff220044", borderRadius: 8,
-                    padding: "6px 10px", color: "#ff6644", fontSize: 11, cursor: "pointer",
+                    padding: "11px 14px", minHeight: 44,
+                    color: "#ff6644", fontSize: 12, cursor: "pointer",
                   }}>Radera</button>
               </div>
             ) : (
               <button onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}
                 style={{
                   background: "transparent", border: "1px solid #1e1e2e", borderRadius: 8,
-                  padding: "6px 12px", color: "#666", fontSize: 12, cursor: "pointer", marginLeft: 12,
+                  padding: "0", minWidth: 44, minHeight: 44,
+                  color: "#666", fontSize: 14, cursor: "pointer", marginLeft: 12,
+                  display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
                 🗑
               </button>

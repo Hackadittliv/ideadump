@@ -156,7 +156,8 @@ export default function SettingsView({ ideas, onClearIdeas, flash, user, onSignO
           </div>
           <button onClick={onSignOut} style={{
             background: "none", border: "1px solid #3a1a1a", borderRadius: 8,
-            color: "#aa4444", fontSize: 11, padding: "6px 12px", cursor: "pointer",
+            color: "#aa4444", fontSize: 12, padding: "11px 14px", minHeight: 44,
+            cursor: "pointer",
           }}>Logga ut</button>
         </div>
       )}
@@ -287,8 +288,9 @@ export default function SettingsView({ ideas, onClearIdeas, flash, user, onSignO
               <button onClick={() => removeBrand(i)} title="Ta bort"
                 style={{
                   background: "transparent", border: "1px solid #3a1a1a",
-                  borderRadius: 8, color: "#aa4444", fontSize: 12,
-                  padding: "6px 10px", cursor: "pointer",
+                  borderRadius: 8, color: "#aa4444", fontSize: 14,
+                  padding: "0", minWidth: 44, minHeight: 44, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
                 }}>✕</button>
             </div>
           ))}

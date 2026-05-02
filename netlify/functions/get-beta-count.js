@@ -1,12 +1,10 @@
 // Returnerar antal på väntelistan (för urgency-badge på landningssidan)
 const { createClient } = require("@supabase/supabase-js");
+const { SUPABASE_URL } = require("./_auth");
 
 exports.handler = async () => {
   try {
-    const supabase = createClient(
-      process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co",
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    const supabase = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
     const { count } = await supabase
       .from("ideadump_beta_signups")
       .select("*", { count: "exact", head: true });

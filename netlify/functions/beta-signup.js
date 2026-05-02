@@ -1,6 +1,7 @@
 // Beta-anmälan — sparar i Supabase + skickar bekräftelsemail via Resend
 const { createClient } = require("@supabase/supabase-js");
 const { escapeHtml } = require("./_html");
+const { SUPABASE_URL } = require("./_auth");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -19,10 +20,7 @@ exports.handler = async (event) => {
   }
 
   // ── Spara i Supabase ──
-  const supabase = createClient(
-    process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co",
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  const supabase = createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
   const { error: dbError } = await supabase
     .from("ideadump_beta_signups")

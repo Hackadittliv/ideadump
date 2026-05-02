@@ -3,11 +3,11 @@
 // Konfigureras via netlify.toml [[functions."scheduled-weekly-review"]] schedule
 const { createClient } = require("@supabase/supabase-js");
 const { escapeHtml } = require("./_html");
+const { SUPABASE_URL } = require("./_auth");
 
 // Hårdkodat till Christians user_id i Supabase — mail går bara till honom.
 const OWNER_USER_ID = process.env.IDEADUMP_OWNER_USER_ID;
 const OWNER_EMAIL = process.env.IDEADUMP_OWNER_EMAIL || "lillen75@gmail.com";
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co";
 
 exports.handler = async (event = {}) => {
   // Netlify scheduler invokar utan httpMethod. Publika HTTP-anrop måste ha CRON_SECRET.

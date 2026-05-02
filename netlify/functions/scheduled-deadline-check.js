@@ -1,9 +1,9 @@
 // Körs varje morgon kl 8:00 CET. Skickar push om deadlines försvinner eller passerar idag.
 const { createClient } = require("@supabase/supabase-js");
 const webpush = require("web-push");
+const { SUPABASE_URL } = require("./_auth");
 
 const OWNER_USER_ID = process.env.IDEADUMP_OWNER_USER_ID;
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co";
 
 exports.handler = async (event = {}) => {
   // Netlify scheduler invokar utan httpMethod. Publika HTTP-anrop måste ha CRON_SECRET.

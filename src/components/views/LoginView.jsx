@@ -56,7 +56,8 @@ export default function LoginView({ onSignInGoogle, onSignInEmail, onSignUpEmail
         {onBack && (
           <button onClick={onBack} style={{
             background: "none", border: "1px solid #1a1a2e", borderRadius: 10,
-            color: "#444", fontSize: 13, padding: "8px 14px", cursor: "pointer", marginBottom: 24,
+            color: "#444", fontSize: 13, padding: "11px 16px", minHeight: 44,
+            cursor: "pointer", marginBottom: 24,
             display: "flex", alignItems: "center", gap: 6,
           }}>← Tillbaka</button>
         )}

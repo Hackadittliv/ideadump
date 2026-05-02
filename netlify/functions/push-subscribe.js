@@ -1,6 +1,6 @@
 // Registrerar en webbläsares push-subscription i Supabase
 const { createClient } = require("@supabase/supabase-js");
-const { requireUser } = require("./_auth");
+const { requireUser, SUPABASE_URL } = require("./_auth");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -8,7 +8,6 @@ exports.handler = async (event) => {
   }
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabaseUrl = process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co";
 
   if (!serviceKey) {
     return { statusCode: 503, body: JSON.stringify({ error: "SUPABASE_SERVICE_ROLE_KEY saknas." }) };
@@ -29,7 +28,7 @@ exports.handler = async (event) => {
   if (auth.error) return auth.error;
   const userId = auth.userId;
 
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = createClient(SUPABASE_URL, serviceKey);
 
   const { error } = await supabase
     .from("ideadump_push_subscriptions")

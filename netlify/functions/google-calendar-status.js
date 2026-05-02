@@ -1,9 +1,7 @@
 // Kollar om användaren har kopplat Google Calendar.
 // Servern har service-role key som bypassar RLS; frontend har inte.
 const { createClient } = require("@supabase/supabase-js");
-const { requireUser } = require("./_auth");
-
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co";
+const { requireUser, SUPABASE_URL } = require("./_auth");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {

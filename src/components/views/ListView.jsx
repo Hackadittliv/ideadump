@@ -146,9 +146,9 @@ export default function ListView({
             <button key={o.key} onClick={() => setSortBy(o.key)} style={{
               background: sortBy === o.key ? "#00F0FF18" : "transparent",
               border: `1px solid ${sortBy === o.key ? "#00F0FF33" : "#111128"}`,
-              borderRadius: 8, padding: "5px 10px",
+              borderRadius: 8, padding: "10px 12px", minHeight: 36,
               color: sortBy === o.key ? "#00F0FF" : "#777",
-              fontSize: 10, cursor: "pointer",
+              fontSize: 11, cursor: "pointer",
             }}>{o.label}</button>
           ))}
         </div>

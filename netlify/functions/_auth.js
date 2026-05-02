@@ -48,4 +48,4 @@ async function requireUser(event, expectedUserId) {
   return { userId: data.user.id, supabase };
 }
 
-module.exports = { requireUser };
+module.exports = { requireUser, SUPABASE_URL };

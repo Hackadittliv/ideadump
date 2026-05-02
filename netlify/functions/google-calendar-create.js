@@ -1,9 +1,7 @@
 // Skapar ett kalenderevent direkt i Google Calendar åt användaren.
 // Använder lagrad refresh_token, förnyar access_token vid behov.
 const { createClient } = require("@supabase/supabase-js");
-const { requireUser } = require("./_auth");
-
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://wmvxantcujnsathpeqyu.supabase.co";
+const { requireUser, SUPABASE_URL } = require("./_auth");
 
 async function refreshAccessToken(refreshToken) {
   const res = await fetch("https://oauth2.googleapis.com/token", {
