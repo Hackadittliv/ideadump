@@ -317,10 +317,11 @@ export default function SettingsView({ ideas, onClearIdeas, flash, user, onSignO
           value={goals}
           onChange={e => { setGoals(e.target.value); setConfigSaved(false); }}
           placeholder="T.ex. 'Bli skuldfri 2026 och öka kassaflödet via AI-tjänster, appar och föreläsningar.'"
+          inputMode="text"
           style={{
             width: "100%", minHeight: 120, padding: "10px 12px",
             background: "#02020e", border: "1px solid #1e1e3a", borderRadius: 8,
-            color: "#ccc", fontSize: 13, fontFamily: "inherit", outline: "none",
+            color: "#ccc", fontSize: 16, fontFamily: "inherit", outline: "none",
             lineHeight: 1.6, resize: "vertical", boxSizing: "border-box",
           }}
         />

@@ -126,6 +126,13 @@ export default function LandingView({ onShowLogin, onShowPrivacy }) {
           }}>
             Logga in med Google →
           </button>
+          <p style={{ margin: "12px 0 0", fontSize: 11, color: "#666", lineHeight: 1.6 }}>
+            Genom att logga in godkänner du vår{" "}
+            <button onClick={onShowPrivacy} style={{
+              background: "none", border: "none", padding: 0,
+              color: "#13c8ec", textDecoration: "underline", fontSize: 11, cursor: "pointer",
+            }}>integritetspolicy</button>.
+          </p>
         </section>
 
         {/* Hur det fungerar */}
