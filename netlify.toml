@@ -26,5 +26,11 @@
 [functions."scheduled-deadline-check"]
   schedule = "0 7 * * *"
 
+# Decision pressure 2.0 — varje morgon kl 8:00 UTC: idéer med planerad
+# revenue-handling som inte fått ett "Gjorde det"-kvitto inom 7 dagar
+# auto-parkeras med flagga. Visas som banner i Vecka-fliken.
+[functions."scheduled-revenue-sweep"]
+  schedule = "0 8 * * *"
+
 # Lokalt: kopiera .env.example → .env och fyll i dina nycklar
 # Kör sedan: netlify dev

@@ -53,6 +53,18 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea, user }) {
     i.status === "next" && !i.deadline && !i.googleEventId
   );
 
+  // Decision pressure 2.0: revenue-handlingar som auto-parkerats senaste 30
+  // dagarna pga inaktivitet. Synlig skuld varje gång du öppnar Vecka-fliken.
+  const cutoff30d = Date.now() - 30 * 24 * 3600 * 1000;
+  const recentlySwept = ideas.filter(i =>
+    i.revenueActionStatus === "abandoned"
+    && i.revenueOutcome?.note?.startsWith("Auto:")
+    && i.revenueOutcome?.completedAt
+    && new Date(i.revenueOutcome.completedAt).getTime() > cutoff30d
+  ).sort((a, b) =>
+    new Date(b.revenueOutcome.completedAt) - new Date(a.revenueOutcome.completedAt)
+  );
+
   const canUseGoogle = googleOAuthConfigured() && !!user?.id;
 
   const bookOne = async (idea, dateOverride) => {
@@ -152,6 +164,42 @@ export default function WeeklyReviewView({ ideas, onUpdateIdea, user }) {
           {activeIdeas.length} aktiva idéer · {overdueIdeas.length > 0 ? `${overdueIdeas.length} försenade` : "inga försenade"}{blockedCount > 0 ? ` · ${blockedCount} blockerade` : ""}
         </p>
       </div>
+
+      {/* Decision pressure 2.0: synlig skuld från auto-parkerade revenue-actions */}
+      {recentlySwept.length > 0 && (
+        <div style={{
+          background: "#88003306", border: "1px solid #88333355",
+          borderRadius: 12, padding: "14px 16px", marginBottom: 16,
+        }}>
+          <p style={{ margin: 0, fontSize: 11, color: "#aa6677", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
+            💀 {recentlySwept.length} revenue-handling{recentlySwept.length === 1 ? "" : "ar"} parkerades senaste 30 dagar
+          </p>
+          <p style={{ margin: "6px 0 10px", fontSize: 12, color: "#aaa", lineHeight: 1.6 }}>
+            Inget "Gjorde det"-kvitto inom 7 dagar. Detta är inte fel — men det är synlig skuld. Antingen är handlingarna fel typ, eller så är det andra saker som tar tid.
+          </p>
+          {recentlySwept.slice(0, 3).map(idea => {
+            const color = getBrandColorsMap()[idea.brand] || "#888";
+            const text = idea.aiAnalysis?.revenueAction?.description?.slice(0, 80)
+              || idea.aiAnalysis?.summary?.slice(0, 80)
+              || idea.transcript?.slice(0, 80);
+            const when = new Date(idea.revenueOutcome.completedAt);
+            return (
+              <div key={idea.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+                <span style={{ fontSize: 11, color, fontWeight: 700, letterSpacing: 0.5, marginRight: 8 }}>{idea.brand}</span>
+                <span style={{ fontSize: 12, color: "#999", flex: 1, lineHeight: 1.5 }}>{text}</span>
+                <span style={{ fontSize: 10, color: "#666", marginLeft: 8, flexShrink: 0 }}>
+                  {when.toLocaleDateString("sv-SE", { day: "numeric", month: "short" })}
+                </span>
+              </div>
+            );
+          })}
+          {recentlySwept.length > 3 && (
+            <p style={{ margin: "8px 0 0", fontSize: 10, color: "#666", letterSpacing: 0.5 }}>
+              + {recentlySwept.length - 3} till — filtrera på status=Parkera för att se alla
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Decision pressure: Next Actions utan tid */}
       {nextWithoutTime.length > 0 && (
