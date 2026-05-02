@@ -1,5 +1,7 @@
 // Proxy för Anthropic Claude API — håller API-nyckeln server-side
 const { requireUser } = require("./_auth");
+const { wrapUserContent, PROMPT_INJECTION_GUARD } = require("./_llm");
+const { loadActiveReflections, formatReflectionsBlock, markUsed } = require("./_reflections");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -23,6 +25,10 @@ exports.handler = async (event) => {
   } catch {
     return { statusCode: 400, body: JSON.stringify({ error: "Ogiltig request body." }) };
   }
+
+  // Hämta aktiva lärdomar — fail-soft, en SQL-glitch ska inte stoppa analysen
+  const reflections = await loadActiveReflections(auth.userId).catch(() => []);
+  const reflectionsBlock = formatReflectionsBlock(reflections);
 
   // Användarens anpassade varumärken + mål — fallback till Christians defaults
   const brands = Array.isArray(userConfig?.brands) && userConfig.brands.length > 0
@@ -63,6 +69,10 @@ COACHING-STIL:
 - Referera till varumärken vid namn när relevant
 - Håll coachComment kort: max 2 meningar, inga floskler
 
+${reflectionsBlock}
+
+${PROMPT_INJECTION_GUARD}
+
 Returnera ONLY valid compact JSON utan markdown eller backticks.`;
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -80,7 +90,9 @@ Returnera ONLY valid compact JSON utan markdown eller backticks.`;
       ],
       messages: [{
         role: "user",
-        content: `Analysera denna idé: "${transcript}"
+        content: `Analysera idén nedan.
+
+${wrapUserContent("idea", transcript)}
 
 Returnera exakt detta JSON:
 {
@@ -113,6 +125,8 @@ energyWarning: "genuine", "distraction", eller "neutral".`,
   }
 
   const data = await res.json();
+  // Markera reflections som använda — fail-soft
+  markUsed(auth.userId).catch(() => {});
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json" },

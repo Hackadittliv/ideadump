@@ -4,6 +4,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const { escapeHtml } = require("./_html");
 const { SUPABASE_URL } = require("./_auth");
+const { wrapUserContent, PROMPT_INJECTION_GUARD } = require("./_llm");
 
 // Hårdkodat till Christians user_id i Supabase — mail går bara till honom.
 const OWNER_USER_ID = process.env.IDEADUMP_OWNER_USER_ID;
@@ -122,6 +123,119 @@ top3.index är 0-baserat. Max 3.`,
     parsed = { weekInsight: raw, top3: [], warning: "", fastestRevenue: "" };
   }
 
+  // ── Föreslå nya reflections (lärdomar) baserat på veckans data ──
+  // Hämta befintliga aktiva reflections så Claude kan föreslå uppdateringar.
+  const { data: existingReflections } = await supabase
+    .from("ideadump_user_reflections")
+    .select("id, type, statement, status")
+    .eq("user_id", OWNER_USER_ID)
+    .in("status", ["active", "pinned"])
+    .limit(20);
+
+  const reflectionContext = (existingReflections || [])
+    .map(r => `- [${r.id}] ${r.type}: ${r.statement}`)
+    .join("\n") || "(inga befintliga lärdomar)";
+
+  const allIdeasContext = allIdeas.slice(-30).map(i =>
+    `id=${i.id} | brand=${i.brand} | status=${i.status} | ICE=${i.aiAnalysis ? ((i.aiAnalysis.ice?.impact + i.aiAnalysis.ice?.confidence + i.aiAnalysis.ice?.ease) / 3).toFixed(1) : "?"} | warning=${i.aiAnalysis?.energyWarning || "?"} | summary=${(i.aiAnalysis?.summary || i.transcript || "").slice(0, 80)}`
+  ).join("\n");
+
+  const reflectRes = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      system: `Du är en analytiker som identifierar mönster om en entreprenörs idé-flöde. Ditt jobb är att försiktigt föreslå NYA lärdomar (eller uppdatera befintliga) som kommer hjälpa coachen ge bättre framtida feedback.
+
+KRITISKA REGLER:
+- Föreslå max 3 NYA reflections och max 3 uppdateringar per vecka
+- VARJE reflection måste ha minst 2 stödjande idé-IDs som evidence (om <2 finns, hoppa över)
+- Skriv reflections som hypoteser, inte fakta — användaren ska godkänna dem
+- Om data är för tunn (<5 idéer): returnera tomma listor
+- Föreslå INGA reflections som är generiska/uppenbara ("användaren gillar att vara produktiv")
+- Föreslå reflections som är specifika, falsifierbara och åtgärdbara
+
+${PROMPT_INJECTION_GUARD}
+
+Returnera ENDAST valid JSON utan markdown.`,
+      messages: [{
+        role: "user",
+        content: `Befintliga aktiva lärdomar:
+${wrapUserContent("existing_reflections", reflectionContext)}
+
+Idé-data senaste 30 idéerna:
+${wrapUserContent("ideas", allIdeasContext)}
+
+Returnera EXAKT detta JSON:
+{
+  "new_reflections": [
+    {
+      "type": "pattern",
+      "statement": "Konkret hypotes max 200 tecken",
+      "evidence_idea_ids": ["id1", "id2"],
+      "confidence": 0.7
+    }
+  ],
+  "update_existing": [
+    {
+      "id": "uuid-på-befintlig",
+      "new_statement": "Reviderat påstående om befintlig stämmer fortfarande, annars skip",
+      "evidence_idea_ids": ["id3", "id4"]
+    }
+  ]
+}
+type måste vara: pattern, preference, constraint, anti_pattern, eller goal_shift.
+confidence: 0.0-1.0.
+Tomma arrayer är OK.`,
+      }],
+    }),
+  });
+
+  const reflectSuggestions = { new_reflections: [], update_existing: [] };
+  if (reflectRes.ok) {
+    const rd = await reflectRes.json();
+    const rraw = rd.content?.[0]?.text || "";
+    try {
+      const s = rraw.indexOf("{");
+      const e = rraw.lastIndexOf("}");
+      const p = JSON.parse(rraw.slice(s, e + 1));
+      reflectSuggestions.new_reflections = (p.new_reflections || []).slice(0, 3);
+      reflectSuggestions.update_existing = (p.update_existing || []).slice(0, 3);
+    } catch (err) {
+      console.error("[reflect] kunde inte parsa förslag:", err.message);
+    }
+  } else {
+    console.error("[reflect] Claude-fel:", reflectRes.status);
+  }
+
+  // Spara nya som status=pending — användaren godkänner i Settings
+  const ALLOWED_TYPES = ["pattern", "preference", "constraint", "anti_pattern", "goal_shift"];
+  const toInsert = reflectSuggestions.new_reflections
+    .filter(r => r && ALLOWED_TYPES.includes(r.type) && r.statement && (r.evidence_idea_ids || []).length >= 2)
+    .map(r => ({
+      user_id: OWNER_USER_ID,
+      type: r.type,
+      statement: String(r.statement).slice(0, 500),
+      evidence_idea_ids: r.evidence_idea_ids.slice(0, 20),
+      confidence: Math.min(1, Math.max(0, Number(r.confidence) || 0.5)),
+      status: "pending",
+      source: "weekly_review",
+    }));
+
+  let pendingInserted = 0;
+  if (toInsert.length > 0) {
+    const { error: insErr, data: insData } = await supabase
+      .from("ideadump_user_reflections")
+      .insert(toInsert)
+      .select("id");
+    if (insErr) {
+      console.error("[reflect] insert error:", insErr.message);
+    } else {
+      pendingInserted = (insData || []).length;
+    }
+  }
+
   // 3. Bygg HTML-mail
   const top3Ideas = (parsed.top3 || [])
     .map(t => activeIdeas[t.index])
@@ -168,6 +282,14 @@ top3.index är 0-baserat. Max 3.`,
         </div>`;
     }).join("")}
     ` : ""}
+
+    ${pendingInserted > 0 ? `
+    <div style="background: #ffaa0008; border: 1px solid #ffaa0033; border-radius: 12px; padding: 14px 16px; margin-top: 24px;">
+      <p style="margin: 0 0 6px; font-size: 11px; color: #ffaa00; letter-spacing: 1px; text-transform: uppercase; font-weight: 700;">🧠 Nya lärdomar att granska</p>
+      <p style="margin: 0; font-size: 13px; color: #ccc; line-height: 1.65;">
+        Claude har identifierat ${pendingInserted} mönster i ditt idé-flöde och föreslår dem som nya lärdomar. Öppna fliken Lärdomar i appen för att godkänna eller avvisa.
+      </p>
+    </div>` : ""}
 
     <div style="margin-top: 32px; text-align: center;">
       <a href="https://ideadump.se" style="display: inline-block; background: linear-gradient(135deg, #00F0FF28 0%, #F2B8B428 100%); border: 1px solid #00F0FF44; border-radius: 12px; padding: 12px 24px; color: #00F0FF; text-decoration: none; font-size: 14px; font-weight: 700;">Öppna IdeaDump →</a>

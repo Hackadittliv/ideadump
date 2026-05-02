@@ -6,6 +6,7 @@ import PrivacyView from "./components/views/PrivacyView.jsx";
 import LoginView from "./components/views/LoginView.jsx";
 import WeeklyReviewView from "./components/views/WeeklyReviewView.jsx";
 import LandingView from "./components/views/LandingView.jsx";
+import ReflectionsView from "./components/views/ReflectionsView.jsx";
 import BottomNav from "./components/ui/BottomNav.jsx";
 import { useAuth } from "./utils/useAuth.js";
 import { saveToCloud, loadFromCloud } from "./utils/cloudSync.js";
@@ -434,6 +435,10 @@ export default function IdeaDump() {
           ideas={ideas}
           onUpdateIdea={updated => persistIdeas(ideas.map(i => i.id === updated.id ? updated : i))}
         />
+      )}
+
+      {view === "reflections" && (
+        <ReflectionsView flash={flash} />
       )}
 
       {view === "settings" && (

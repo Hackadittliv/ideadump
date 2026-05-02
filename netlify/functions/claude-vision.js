@@ -1,5 +1,6 @@
 // Bildanalys — Claude Vision läser whiteboard/anteckningar/skärmdumpar och extraherar idén
 const { requireUser } = require("./_auth");
+const { wrapUserContent, PROMPT_INJECTION_GUARD } = require("./_llm");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -39,9 +40,11 @@ exports.handler = async (event) => {
     },
     {
       type: "text",
-      text: `Läs bilden och extrahera idén som text. Bilden kan vara en whiteboard, servettsanteckning, skärmdump, skiss, handskrift eller maskinskriven text.${note ? `\n\nChristians egen kommentar till bilden: "${note}"` : ""}
+      text: `Läs bilden och extrahera idén som text. Bilden kan vara en whiteboard, servettsanteckning, skärmdump, skiss, handskrift eller maskinskriven text.${note ? `\n\nAnvändarens egen kommentar till bilden:\n${wrapUserContent("user_note", note)}` : ""}
 
-Returnera enbart den sammanfattade idén som vanlig text på svenska — inget JSON, inga rubriker. Som om Christian själv hade dikterat idén i röstinspelning. Max 3 meningar som täcker kärnan av vad bilden/anteckningen handlar om.`,
+${PROMPT_INJECTION_GUARD}
+
+Returnera enbart den sammanfattade idén som vanlig text på svenska — inget JSON, inga rubriker. Som om användaren själv hade dikterat idén i röstinspelning. Max 3 meningar som täcker kärnan av vad bilden/anteckningen handlar om.`,
     },
   ];
 

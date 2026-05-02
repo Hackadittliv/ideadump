@@ -1,5 +1,6 @@
 // Veckoanalys — Claude sammanfattar Inbox + Next Action och pekar ut veckans prioriteringar
 const { requireUser } = require("./_auth");
+const { wrapUserContent, PROMPT_INJECTION_GUARD } = require("./_llm");
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -67,6 +68,8 @@ COACHING-TON:
 - Om idéer ruttnar i inbox — påpek det
 - Om han jagar för många bollar — påpek det
 
+${PROMPT_INJECTION_GUARD}
+
 Returnera ONLY valid compact JSON utan markdown eller backticks.`,
           cache_control: { type: "ephemeral" },
         },
@@ -75,7 +78,7 @@ Returnera ONLY valid compact JSON utan markdown eller backticks.`,
         role: "user",
         content: `Christian har ${ideas.length} aktiva idéer (Inbox + Next Action). Gör en veckoanalys.
 
-${ideaList}
+${wrapUserContent("idea_list", ideaList)}
 
 Returnera exakt detta JSON:
 {

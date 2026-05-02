@@ -61,6 +61,19 @@ function CalendarGlyph({ filled, c }) {
   );
 }
 
+function BrainGlyph({ filled, c }) {
+  return filled ? (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M9 4.5C7.5 4.5 6 5.6 6 7.2c-1.4.4-2.4 1.7-2.4 3.2 0 .9.4 1.7 1 2.3-.4.5-.6 1.1-.6 1.8 0 1.5 1.1 2.8 2.6 3 .2 1.5 1.5 2.7 3.1 2.7 1 0 1.9-.4 2.5-1.1.6.7 1.5 1.1 2.5 1.1 1.6 0 2.9-1.2 3.1-2.7 1.5-.2 2.6-1.5 2.6-3 0-.7-.2-1.3-.6-1.8.6-.6 1-1.4 1-2.3 0-1.5-1-2.8-2.4-3.2 0-1.6-1.5-2.7-3-2.7-1 0-1.9.4-2.5 1.1C10.9 4.9 10 4.5 9 4.5Z" fill={c} opacity="0.22" stroke={c} strokeWidth="1.4"/>
+      <path d="M12 6v13" stroke={c} strokeWidth="1.2" opacity="0.6"/>
+    </svg>
+  ) : (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M9 4.5C7.5 4.5 6 5.6 6 7.2c-1.4.4-2.4 1.7-2.4 3.2 0 .9.4 1.7 1 2.3-.4.5-.6 1.1-.6 1.8 0 1.5 1.1 2.8 2.6 3 .2 1.5 1.5 2.7 3.1 2.7 1 0 1.9-.4 2.5-1.1.6.7 1.5 1.1 2.5 1.1 1.6 0 2.9-1.2 3.1-2.7 1.5-.2 2.6-1.5 2.6-3 0-.7-.2-1.3-.6-1.8.6-.6 1-1.4 1-2.3 0-1.5-1-2.8-2.4-3.2 0-1.6-1.5-2.7-3-2.7-1 0-1.9.4-2.5 1.1C10.9 4.9 10 4.5 9 4.5Z" stroke={c} strokeWidth="1.4"/>
+    </svg>
+  );
+}
+
 function GearGlyph({ filled, c }) {
   const teeth = Array.from({ length: 8 }, (_, i) => {
     const a = (i * Math.PI) / 4;
@@ -87,10 +100,11 @@ function GearGlyph({ filled, c }) {
 }
 
 const TAB_DEFS = [
-  { key: "capture",  label: "Capture",       Glyph: MicGlyph },
-  { key: "list",     label: "Idéer",         Glyph: ListGlyph },
-  { key: "weekly",   label: "Vecka",         Glyph: CalendarGlyph },
-  { key: "settings", label: "Inställningar", Glyph: GearGlyph },
+  { key: "capture",     label: "Capture",   Glyph: MicGlyph },
+  { key: "list",        label: "Idéer",     Glyph: ListGlyph },
+  { key: "weekly",      label: "Vecka",     Glyph: CalendarGlyph },
+  { key: "reflections", label: "Lärdomar",  Glyph: BrainGlyph },
+  { key: "settings",    label: "Mer",       Glyph: GearGlyph },
 ];
 
 function formatBadge(n) {
