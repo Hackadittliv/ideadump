@@ -1,9 +1,25 @@
-// Körs varje morgon kl 8:00 CET. Skickar push om deadlines försvinner eller passerar idag.
+// Körs varje morgon kl 8:00 CET. Två syften:
+// 1. Deadline-påminnelse — om något har deadline idag, försenat, eller inom 2 dagar
+// 2. Morning-focus — om inga deadlines, push:a EN sak att fokusera på
+//    (högst-ICE-idén i status `next` med en konkret nextActionSuggestion)
 const { createClient } = require("@supabase/supabase-js");
 const webpush = require("web-push");
 const { SUPABASE_URL } = require("./_auth");
 
 const OWNER_USER_ID = process.env.IDEADUMP_OWNER_USER_ID;
+
+function iceTotal(idea) {
+  const ice = idea?.aiAnalysis?.ice;
+  if (!ice || ice.impact == null || ice.confidence == null || ice.ease == null) return 0;
+  return (ice.impact + ice.confidence + ice.ease) / 3;
+}
+
+function isBlocked(idea, allIdeas) {
+  return (idea.dependsOn || []).some((id) => {
+    const blocker = allIdeas.find((x) => x.id === id);
+    return blocker && blocker.status !== "done";
+  });
+}
 
 exports.handler = async (event = {}) => {
   // Netlify scheduler invokar utan httpMethod. Publika HTTP-anrop måste ha CRON_SECRET.
@@ -47,21 +63,35 @@ exports.handler = async (event = {}) => {
     i.deadline && i.deadline > today && i.deadline <= in2days && i.status !== "done"
   );
 
-  if (overdue.length === 0 && dueToday.length === 0 && dueSoon.length === 0) {
-    return { statusCode: 200, body: "Inga deadlines idag" };
-  }
-
   let title = "";
   let body = "";
+  let url = "https://ideadump.se";
+
   if (overdue.length > 0) {
     title = `⚠️ ${overdue.length} deadline${overdue.length > 1 ? "s" : ""} har passerat`;
     body = overdue.slice(0, 2).map(i => i.aiAnalysis?.summary?.slice(0, 60) || i.transcript?.slice(0, 60)).join(" · ");
   } else if (dueToday.length > 0) {
     title = `📅 ${dueToday.length} deadline${dueToday.length > 1 ? "s" : ""} idag`;
     body = dueToday.slice(0, 2).map(i => i.aiAnalysis?.summary?.slice(0, 60) || i.transcript?.slice(0, 60)).join(" · ");
-  } else {
+  } else if (dueSoon.length > 0) {
     title = `🔔 ${dueSoon.length} deadline${dueSoon.length > 1 ? "s" : ""} inom 2 dagar`;
     body = dueSoon.slice(0, 2).map(i => i.aiAnalysis?.summary?.slice(0, 60) || i.transcript?.slice(0, 60)).join(" · ");
+  } else {
+    // Morning-focus: inga deadlines → välj högst-ICE från `next`-stacken som
+    // har ett konkret nextActionSuggestion. Push:a EN sak att fokusera på.
+    const candidates = ideas
+      .filter(i => i.status === "next"
+        && i.aiAnalysis?.nextActionSuggestion
+        && !isBlocked(i, ideas))
+      .sort((a, b) => iceTotal(b) - iceTotal(a));
+
+    const focus = candidates[0];
+    if (!focus) {
+      return { statusCode: 200, body: "Inga deadlines, inga next actions" };
+    }
+
+    title = `🎯 Idag · ${focus.brand}`;
+    body = focus.aiAnalysis.nextActionSuggestion.slice(0, 110);
   }
 
   const { data: subs } = await supabase
@@ -71,7 +101,7 @@ exports.handler = async (event = {}) => {
 
   if (!subs || subs.length === 0) return { statusCode: 200, body: "Inga prenumerationer" };
 
-  const payload = JSON.stringify({ title, body, url: "https://ideadump.se" });
+  const payload = JSON.stringify({ title, body, url });
 
   const results = await Promise.allSettled(
     subs.map(async (s) => {

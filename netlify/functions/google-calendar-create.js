@@ -79,8 +79,8 @@ exports.handler = async (event) => {
   // Bygg eventet
   const ai = idea.aiAnalysis || {};
   const title = ai.nextActionSuggestion
-    ? `💡 ${ai.nextActionSuggestion.slice(0, 80)}`
-    : `💡 ${ai.summary?.slice(0, 80) || idea.transcript?.slice(0, 80) || "IdeaDump-idé"}`;
+    ? `💡 [${idea.brand}] ${ai.nextActionSuggestion.slice(0, 80)}`
+    : `💡 [${idea.brand}] ${ai.summary?.slice(0, 80) || idea.transcript?.slice(0, 80) || "IdeaDump-idé"}`;
 
   const descParts = [];
   if (ai.summary) descParts.push(ai.summary);
@@ -89,43 +89,76 @@ exports.handler = async (event) => {
   descParts.push(`\n\n— IdeaDump · ${idea.brand}`);
   const description = descParts.join("\n");
 
-  // Starttid: angiven dag kl 09:00, eller idag kl 09:00 om inte specificerad
-  const startDay = scheduledDate || new Date().toISOString().slice(0, 10);
-  const startTime = `${startDay}T09:00:00`;
-  const endTime = `${startDay}T10:00:00`;
+  // Bestäm event-typ:
+  // - har deadline → all-day event på deadline-datumet (slipper fake-möten)
+  // - ingen deadline men scheduledDate angiven → 30 min block 09:00
+  // - inget alls → idag 09:00 (bakåtkompabilitet med befintliga callers)
+  const startDay = scheduledDate || idea.deadline || new Date().toISOString().slice(0, 10);
+  const isAllDay = !!idea.deadline && !scheduledDate;
 
-  const eventBody = {
-    summary: title,
-    description,
-    start: { dateTime: startTime, timeZone: "Europe/Stockholm" },
-    end: { dateTime: endTime, timeZone: "Europe/Stockholm" },
-    reminders: { useDefault: true },
-  };
-
-  const createRes = await fetch(
-    "https://www.googleapis.com/calendar/v3/calendars/primary/events",
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(eventBody),
-    },
-  );
-
-  if (!createRes.ok) {
-    const err = await createRes.text();
-    return { statusCode: createRes.status, body: JSON.stringify({ error: "Kalendersskapande misslyckades: " + err }) };
+  let eventBody;
+  if (isAllDay) {
+    // All-day i Google Calendar: end.date är dagen EFTER (exklusiv).
+    const endDay = new Date(`${startDay}T00:00:00Z`);
+    endDay.setUTCDate(endDay.getUTCDate() + 1);
+    eventBody = {
+      summary: title,
+      description,
+      start: { date: startDay },
+      end: { date: endDay.toISOString().slice(0, 10) },
+      reminders: { useDefault: true },
+    };
+  } else {
+    eventBody = {
+      summary: title,
+      description,
+      start: { dateTime: `${startDay}T09:00:00`, timeZone: "Europe/Stockholm" },
+      end:   { dateTime: `${startDay}T09:30:00`, timeZone: "Europe/Stockholm" },
+      reminders: { useDefault: true },
+    };
   }
 
-  const created = await createRes.json();
+  // Idempotens: om idén redan har ett eventId, uppdatera det istället
+  // för att skapa ett nytt — annars produceras dubletter när användaren
+  // bokar om eller flippar status fram och tillbaka.
+  const existingEventId = idea.googleEventId;
+  const url = existingEventId
+    ? `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(existingEventId)}`
+    : "https://www.googleapis.com/calendar/v3/calendars/primary/events";
+
+  const method = existingEventId ? "PATCH" : "POST";
+
+  let res = await fetch(url, {
+    method,
+    headers: {
+      "Authorization": `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(eventBody),
+  });
+
+  // Om PATCH 404:ar (event raderat i Google) → faila tillbaka till POST
+  if (existingEventId && res.status === 404) {
+    res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify(eventBody),
+    });
+  }
+
+  if (!res.ok) {
+    const err = await res.text();
+    return { statusCode: res.status, body: JSON.stringify({ error: "Kalenderbokning misslyckades: " + err }) };
+  }
+
+  const saved = await res.json();
   return {
     statusCode: 200,
     body: JSON.stringify({
       ok: true,
-      eventId: created.id,
-      htmlLink: created.htmlLink,
+      eventId: saved.id,
+      htmlLink: saved.htmlLink,
+      updated: !!existingEventId && res.status !== 404,
     }),
   };
 };
