@@ -36,6 +36,13 @@ export async function suggestReflectionFromIdea(idea_id) {
   return res.json(); // { reflection } eller { skipped: true, reason }
 }
 
+export async function pruneStaleReflections() {
+  const res = await authedFetch("/.netlify/functions/reflections-prune-stale", { method: "POST" });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+  const data = await res.json();
+  return data.archived || 0;
+}
+
 export async function deleteReflection(id) {
   const res = await authedFetch("/.netlify/functions/reflections-delete", {
     method: "POST",

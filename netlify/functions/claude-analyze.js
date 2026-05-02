@@ -27,22 +27,28 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Ogiltig request body." }) };
   }
 
+  // Användarens anpassade varumärken + mål — fallback till Christians defaults
+  const brands = Array.isArray(userConfig?.brands) && userConfig.brands.length > 0
+    ? userConfig.brands
+    : ["HDL", "Hackadittliv", "Conversify", "Life Is Awesome", "Timeless Brick", "Hisingen Padel", "Frölunda Kampsportcenter", "Övrigt"];
+
+  // hintBrand kommer från klienten och stoppas in i en PostgREST .or()-filter
+  // i loadActiveReflections — utan whitelist kan en illvillig payload injicera
+  // filter-uttryck. Validera mot användarens egna brand-lista.
+  const safeHintBrand = (typeof hintBrand === "string" && brands.includes(hintBrand))
+    ? hintBrand
+    : null;
+
   // Hämta aktiva lärdomar + matchande skills — fail-soft, en SQL-glitch ska
-  // inte stoppa analysen. hintBrand låter klienten skicka in vilken brand idén
-  // troligen tillhör (t.ex. förvald i UI:t) så vi kan filtrera ner kontext-bloat.
+  // inte stoppa analysen.
   const [reflections, skills] = await Promise.all([
-    loadActiveReflections(auth.userId, { brand: hintBrand }).catch(() => []),
-    loadRelevantSkills(auth.userId, { transcript: transcript || "", brand: hintBrand }).catch(() => []),
+    loadActiveReflections(auth.userId, { brand: safeHintBrand }).catch(() => []),
+    loadRelevantSkills(auth.userId, { transcript: transcript || "", brand: safeHintBrand }).catch(() => []),
   ]);
   const reflectionsBlock = formatReflectionsBlock(reflections);
   const skillsBlock = formatSkillsBlock(skills);
   const usedReflectionIds = reflections.map((r) => r.id);
   const usedSkillIds = skills.map((s) => s.id);
-
-  // Användarens anpassade varumärken + mål — fallback till Christians defaults
-  const brands = Array.isArray(userConfig?.brands) && userConfig.brands.length > 0
-    ? userConfig.brands
-    : ["HDL", "Hackadittliv", "Conversify", "Life Is Awesome", "Timeless Brick", "Hisingen Padel", "Frölunda Kampsportcenter", "Övrigt"];
 
   const goals = typeof userConfig?.goals === "string" && userConfig.goals.trim()
     ? userConfig.goals.trim()

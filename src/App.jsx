@@ -53,6 +53,30 @@ export default function IdeaDump() {
     setOpenaiKey(keys.openai);
   }, []);
 
+  // ── Återställ röst-draft från förra sessionen om den finns ──
+  // Web Speech kraschar då och då mid-tal; utan draft förlorar man allt.
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem("ideadump_transcript_draft");
+      if (draft && draft.trim()) {
+        setTranscript(draft);
+        transcriptRef.current = draft;
+      }
+    } catch {}
+  }, []);
+
+  // Spara transcript-draft löpande (inte under inspelning — då skrivs den
+  // av på varje onresult och blir ändå synkad).
+  useEffect(() => {
+    try {
+      if (transcript && transcript.trim()) {
+        localStorage.setItem("ideadump_transcript_draft", transcript);
+      } else {
+        localStorage.removeItem("ideadump_transcript_draft");
+      }
+    } catch {}
+  }, [transcript]);
+
   // Autorecord: vänta tills användaren är inloggad och beta-godkänd
   const autorecordPending = useRef(
     new URLSearchParams(window.location.search).get("autorecord") === "true"
@@ -100,10 +124,25 @@ export default function IdeaDump() {
   }, []);
 
   const persistIdeas = useCallback((arr) => {
-    setIdeas(arr);
-    saveIdeas(arr); // alltid spara lokalt
+    // Stämpla updatedAt på idéer som faktiskt ändrats sedan förra persist:en.
+    // mergeIdeas i cloudSync.js använder fältet för last-write-wins per idé;
+    // utan det skulle två enheters skrivningar tyst skriva över varandra.
+    const prevById = new Map(ideasRef.current.map(i => [i.id, i]));
+    const now = new Date().toISOString();
+    const stamped = arr.map(i => {
+      const prev = prevById.get(i.id);
+      if (!prev) return { ...i, updatedAt: i.updatedAt || now };
+      // Cheap shallow diff via JSON.stringify; idéer är små så kostnaden är OK.
+      if (JSON.stringify(prev) !== JSON.stringify(i)) {
+        return { ...i, updatedAt: now };
+      }
+      return i;
+    });
+
+    setIdeas(stamped);
+    saveIdeas(stamped); // alltid spara lokalt
     if (user) {
-      saveToCloud(user.id, arr).catch(err => {
+      saveToCloud(user.id, stamped).catch(err => {
         console.error("[CloudSync] save failed:", err);
         flash("⚠️ Sparat lokalt men synk till molnet misslyckades. Logga in igen om felet fortsätter.", 5000);
       });

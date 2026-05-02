@@ -4,7 +4,7 @@
 //    utfall, eller överkallar AI:n distractions?)
 // 3. Skills-användning (vilka playbooks triggas faktiskt?)
 import { useEffect, useState, useMemo } from "react";
-import { listReflections } from "../../utils/reflections.js";
+import { listReflections, pruneStaleReflections } from "../../utils/reflections.js";
 import { listOutcomes, OUTCOMES, OUTCOME_LABEL } from "../../utils/outcomes.js";
 import { listSkills } from "../../utils/skills.js";
 
@@ -19,6 +19,8 @@ export default function RubricsPanel() {
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pruning, setPruning] = useState(false);
+  const [pruneMsg, setPruneMsg] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -73,6 +75,29 @@ export default function RubricsPanel() {
       skills: { total: skills.length, enabled: enabledSkills, used: usedSkills },
     };
   }, [reflections, outcomes, skills]);
+
+  const reload = async () => {
+    try {
+      const [r, o, s] = await Promise.all([listReflections(), listOutcomes(), listSkills()]);
+      setReflections(r); setOutcomes(o); setSkills(s);
+    } catch (e) { setError(e.message); }
+  };
+
+  const handlePrune = async () => {
+    setPruning(true); setPruneMsg("");
+    try {
+      const archived = await pruneStaleReflections();
+      setPruneMsg(archived === 0
+        ? "Inga oanvända lärdomar att arkivera."
+        : `Arkiverade ${archived} oanvänd${archived === 1 ? "" : "a"} lärdom${archived === 1 ? "" : "ar"}.`);
+      await reload();
+      setTimeout(() => setPruneMsg(""), 6000);
+    } catch (e) {
+      setPruneMsg("Fel: " + e.message);
+    } finally {
+      setPruning(false);
+    }
+  };
 
   if (loading) return <p style={{ fontSize: 12, color: "#666" }}>Laddar...</p>;
   if (error) return <p style={{ fontSize: 12, color: "#ff6644" }}>Fel: {error}</p>;
@@ -143,6 +168,32 @@ export default function RubricsPanel() {
             value={`${sk.used}/${sk.enabled}`}
             hint={sk.used < sk.enabled ? "Vissa tekniker triggas aldrig — ompröva trigger-villkoren." : "Alla aktiva tekniker har triggat."}
           />
+        )}
+      </Section>
+
+      <Section title="🧹 Underhåll" subtitle="Håll prompt-bloat i schack">
+        <p style={{ margin: "0 0 10px", fontSize: 11, color: "#888", lineHeight: 1.6 }}>
+          Arkiverar aktiva lärdomar som inte använts på 60 dagar (eller aldrig
+          använts och är skapade för 30+ dagar sedan). Pinned lämnas ifred.
+        </p>
+        <button
+          onClick={handlePrune}
+          disabled={pruning}
+          style={{
+            width: "100%", padding: "10px", minHeight: 40,
+            background: pruning ? "#0a0a1a" : "#ffaa0010",
+            border: `1px solid ${pruning ? "#222" : "#ffaa0044"}`,
+            borderRadius: 8,
+            color: pruning ? "#666" : "#ffaa00",
+            fontSize: 12, cursor: pruning ? "wait" : "pointer",
+          }}
+        >
+          {pruning ? "Arkiverar..." : "🧹 Arkivera oanvända lärdomar"}
+        </button>
+        {pruneMsg && (
+          <p style={{ margin: "8px 0 0", fontSize: 11, color: pruneMsg.startsWith("Fel") ? "#ff6644" : "#00ff88" }}>
+            {pruneMsg}
+          </p>
         )}
       </Section>
     </div>
